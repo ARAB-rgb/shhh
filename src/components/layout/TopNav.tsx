@@ -74,6 +74,7 @@ interface TopNavProps {
   onToggleDarkMode?: () => void;
   onOpenPwaModal?: () => void;
   onOpenInternalMail?: () => void;
+  onNavigateToSts?: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
@@ -91,6 +92,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onToggleDarkMode,
   onOpenPwaModal,
   onOpenInternalMail,
+  onNavigateToSts,
 }) => {
   const [showWaffle, setShowWaffle] = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
@@ -267,13 +269,17 @@ export const TopNav: React.FC<TopNavProps> = ({
           <button
             onClick={() => {
               closeAllMenus();
-              onOpenAdminPanel();
+              if (onNavigateToSts) {
+                onNavigateToSts();
+              } else {
+                onOpenAdminPanel();
+              }
             }}
             className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-md transition cursor-pointer shrink-0 animate-in fade-in"
-            title={isAr ? 'لوحة إدارة وحوكمة المنظومة (صلاحيات معتمدة من الخادم)' : 'Admin & Governance Hub'}
+            title={isAr ? 'لوحة تحكم المشرف العام الفائقة (/sts)' : 'STS Admin Portal (/sts)'}
           >
             <ShieldCheck className="w-3.5 h-3.5 text-slate-950" />
-            <span className="hidden sm:inline">{isAr ? 'لوحة الإدارة' : 'Admin Hub'}</span>
+            <span className="hidden sm:inline">{isAr ? 'بوابة الإدارة /sts' : 'STS Portal /sts'}</span>
             <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
           </button>
         )}
@@ -560,31 +566,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           )}
         </div>
 
-        {/* Admin Mode Toggle / Indicator */}
-        {isAdminMode ? (
-          <button
-            onClick={() => {
-              closeAllMenus();
-              onOpenAdminPanel();
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-amber-950 rounded-lg text-xs font-black shadow-sm transition"
-            title={isAr ? 'لوحة تحكم المدير - تخصيص الصفحة' : 'Admin Control Panel'}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{isAr ? 'تخصيص' : 'Admin'}</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => {
-              closeAllMenus();
-              onRequestAdminLogin();
-            }}
-            className="p-2 hover:bg-white/15 rounded transition text-white/90 hover:text-white"
-            title={isAr ? 'تسجيل دخول المدير لتخصيص الصفحة' : 'Admin Mode Login'}
-          >
-            <Lock className="w-4 h-4" />
-          </button>
-        )}
+        {/* Admin controls removed from public view for clean & decluttered user UI */}
 
         {/* Video Studio & Downloader Button */}
         <button

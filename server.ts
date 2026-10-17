@@ -1263,6 +1263,51 @@ app.delete('/api/internal-mail/:id', (req, res) => {
   return res.status(404).json({ error: 'الرسالة غير موجودة' });
 });
 
+// ==========================================
+// STS SUPER ADMIN ROUTER & RBAC (/api/sts)
+// ==========================================
+const stsRouter = express.Router();
+
+// حماية مسار الادمن (Middleware)
+const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const supervisor = resolveAdminUser(req);
+  const user = req.body?.currentUser;
+
+  if (
+    supervisor ||
+    (user && (user.isAdmin || user.role === 'admin' || user.role === 'owner' || user.email === 'a@snns.pro'))
+  ) {
+    (req as any).adminUser = supervisor || user;
+    return next();
+  }
+  return res.status(403).json({
+    error: 'عذراً، هذا المسار مخصص للمدراء فقط (/sts)',
+    code: 'STS_FORBIDDEN',
+  });
+};
+
+// مسارات الأدمن تحت /api/sts
+stsRouter.get('/dashboard', requireAdmin, (_req, res) => {
+  res.json({
+    message: 'مرحباً بك في لوحة تحكم النظام الفائقة /sts',
+    status: 'authorized',
+    timestamp: new Date().toISOString(),
+    supervisorsCount: supervisorsDB.length,
+    appsCount: managedAppsDB.length,
+    securityLevel: 'Enterprise Super Admin (STS)',
+  });
+});
+
+stsRouter.get('/verify', requireAdmin, (req, res) => {
+  res.json({
+    authorized: true,
+    message: 'جلسة المدير معتمدة',
+    user: (req as any).adminUser,
+  });
+});
+
+app.use('/api/sts', stsRouter);
+
 // Vite or Static Serving
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.resolve(__dirname, 'dist')));

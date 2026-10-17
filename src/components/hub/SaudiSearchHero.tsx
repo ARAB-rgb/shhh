@@ -19,6 +19,7 @@ import {
 import { SaudiFlagIcon } from '../icons/AppIcons';
 import { AppId } from '../../types/suite';
 import { APP_REGISTRY } from '../../services/appRegistry';
+import { RoyalLeadershipBanner } from './RoyalLeadershipBanner';
 
 interface SaudiSearchHeroProps {
   onSearchQuery: (query: string) => void;
@@ -78,55 +79,8 @@ export const SaudiSearchHero: React.FC<SaudiSearchHeroProps> = ({
         <span>{isAr ? 'قاعدة بيانات سحابية متكاملة (15 تطبيقاً مفهرساً)' : 'Integrated Cloud Database (15 Apps Indexed)'}</span>
       </div>
 
-      {/* 2. Royal Saudi Leadership Tribute Card (exact composition from user screenshot) */}
-      <div className="w-full max-w-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800 rounded-3xl p-4 sm:p-5 mb-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
-        {/* Subtle decorative emerald glow */}
-        <div className="absolute top-0 start-1/2 -translate-x-1/2 w-96 h-12 bg-emerald-500/10 blur-2xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-          {/* Saudi Flag & Vision 2030 Tile */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="w-16 h-16 rounded-2xl bg-[#006C35] flex flex-col items-center justify-center p-1.5 shadow-md border border-emerald-400/30 overflow-hidden relative group">
-              <SaudiFlagIcon className="w-12 h-9" />
-              <span className="text-[8px] font-black text-white/90 font-mono tracking-wider">KSA 2030</span>
-            </div>
-            <div className="text-start">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-block mb-1">
-                {isAr ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}
-              </span>
-              <h4 className="text-xs sm:text-sm font-black text-white leading-tight">
-                {isAr ? 'طموح يعانق عنان السماء' : 'Ambition Embraces the Sky'}
-              </h4>
-              <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">
-                {isAr ? 'رؤية المملكة 2030 المباركة' : 'Saudi Vision 2030'}
-              </span>
-            </div>
-          </div>
-
-          {/* Leadership Tribute Text */}
-          <div className="text-center sm:text-end border-t sm:border-t-0 sm:border-s border-slate-800/80 pt-3 sm:pt-0 sm:ps-4 flex-1">
-            <p className="text-[11px] sm:text-xs font-bold text-slate-200 leading-relaxed">
-              {isAr ? (
-                <>
-                  <span className="text-emerald-400">خادم الحرمين الشريفين</span> الملك سلمان بن عبدالعزيز
-                  <br />
-                  و<span className="text-emerald-400">ولي العهد رئيس مجلس الوزراء</span> صاحب السمو الملكي الأمير محمد بن سلمان
-                </>
-              ) : (
-                <>
-                  Custodian of the Two Holy Mosques King Salman bin Abdulaziz
-                  <br />& HRH Crown Prince Prime Minister Mohammed bin Salman
-                </>
-              )}
-            </p>
-            <span className="text-[10px] text-amber-400/90 font-semibold mt-1 inline-flex items-center gap-1">
-              <span>★</span>
-              <span>{isAr ? 'القيادة الرشيدة ومسيرة التحول الرقمي الوطني' : 'Wise Leadership & Digital Transformation'}</span>
-              <span>★</span>
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* 2. Royal Saudi Leadership Tribute Banner (Exact user-specified composition & circular golden frame) */}
+      <RoyalLeadershipBanner lang={lang} />
 
       {/* 3. PRO . SNNS Signature Glowing Brand Identity */}
       <div className="mb-2">

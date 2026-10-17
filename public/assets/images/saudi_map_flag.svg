@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 450" width="100%" height="100%">
+  <defs>
+    <filter id="mapShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <linearGradient id="ksaGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0B874B" />
+      <stop offset="60%" stopColor="#006C35" />
+      <stop offset="100%" stopColor="#004D25" />
+    </linearGradient>
+  </defs>
+
+  <!-- Saudi Arabia Geographic Silhouette -->
+  <path d="M 125,12 
+           L 155,50 L 210,105 L 260,140 L 315,185 L 340,210 L 370,225 
+           L 380,240 L 415,260 L 440,285 L 475,320 L 495,335 
+           L 460,350 L 400,375 L 370,410 L 335,430 L 300,442 
+           L 290,420 L 275,410 L 255,395 L 245,410 L 225,405 
+           L 210,380 L 195,370 L 175,355 L 160,335 L 140,310 
+           L 115,270 L 95,245 L 80,215 L 60,190 L 45,170 
+           L 25,145 L 15,125 L 10,110 L 35,100 L 70,80 
+           L 95,50 L 115,30 Z" 
+        fill="url(#ksaGreen)" 
+        stroke="#10B981" 
+        stroke-width="3" 
+        stroke-linejoin="round"
+        filter="url(#mapShadow)" />
+
+  <!-- Arabic Calligraphy: Shahada (لا إله إلا الله محمد رسول الله) stylized -->
+  <g fill="#FFFFFF" transform="translate(150, 175)">
+    <!-- Main Shahada Arabic Script path simulation with clean curves -->
+    <path d="M 15,15 Q 25,0 35,15 Q 45,30 55,15 Q 65,0 75,15 Q 85,30 95,15 Q 105,0 115,15 
+             L 125,35 Q 115,45 100,40 Q 90,50 80,40 Q 70,50 60,40 Q 50,50 40,40 Q 30,50 20,40 Z" opacity="0.95" />
+    <!-- Arabic Calligraphy Text Representation -->
+    <text x="100" y="30" font-family="'Amiri', 'Traditional Arabic', 'Noto Naskh Arabic', 'Scheherazade', serif" font-size="28" font-weight="bold" text-anchor="middle" fill="#FFFFFF" letter-spacing="1">
+      لا إله إلا الله
+    </text>
+    <text x="100" y="58" font-family="'Amiri', 'Traditional Arabic', 'Noto Naskh Arabic', 'Scheherazade', serif" font-size="26" font-weight="bold" text-anchor="middle" fill="#FFFFFF" letter-spacing="1">
+      محمد رسول الله
+    </text>
+    
+    <!-- Saudi Traditional Sword (السيف الأجرب العربي الأصيل) under Shahada -->
+    <!-- Blade -->
+    <path d="M 20,82 L 175,82 Q 185,82 190,80 Q 185,85 170,85 L 20,85 Z" fill="#FFFFFF" />
+    <path d="M 175,82 L 195,81 L 170,85 Z" fill="#FFFFFF" />
+    <!-- Sword Guard -->
+    <rect x="22" y="75" width="4" height="17" rx="2" fill="#FFFFFF" />
+    <!-- Sword Hilt & Pommel -->
+    <rect x="12" y="81.5" width="10" height="4" fill="#FFFFFF" />
+    <circle cx="10" cy="83.5" r="3.5" fill="#FFFFFF" />
+  </g>
+</svg>

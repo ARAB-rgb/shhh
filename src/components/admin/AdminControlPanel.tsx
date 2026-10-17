@@ -59,8 +59,9 @@ interface AdminControlPanelProps {
   onSavePageLayout: (layout: PageLayoutConfig) => void;
   onClose: () => void;
   onLockAdmin: () => void;
-  lang: 'en' | 'ar';
+  lang?: 'en' | 'ar';
   initialTileId?: string | null;
+  isStandaloneSts?: boolean;
 }
 
 export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
@@ -71,8 +72,9 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   onSavePageLayout,
   onClose,
   onLockAdmin,
-  lang,
+  lang = 'ar',
   initialTileId,
+  isStandaloneSts = false,
 }) => {
   const isAr = lang === 'ar';
   const [adminSection, setAdminSection] = useState<

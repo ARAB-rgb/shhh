@@ -39,6 +39,7 @@ import { PwaInstallModal } from './components/common/PwaInstallModal';
 import { appRegistry } from './services/appRegistry';
 import { themeService } from './services/themeService';
 import { InternalMailBox } from './components/common/InternalMailBox';
+import { StsAdminPortal } from './components/admin/StsAdminPortal';
 import { ShieldAlert, UserCheck, RefreshCw, ArrowLeft } from 'lucide-react';
 
 export default function App() {
@@ -52,6 +53,12 @@ export default function App() {
   };
 
   const [currentApp, setCurrentApp] = useState<AppId | null>(getInitialApp);
+  const [isStsRoute, setIsStsRoute] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname.startsWith('/sts');
+    }
+    return false;
+  });
   const [lang, setLang] = useState<'en' | 'ar'>(storage.getLanguage());
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [showPwaModal, setShowPwaModal] = useState<boolean>(false);
@@ -78,9 +85,12 @@ export default function App() {
   // Listen for browser navigation (popstate)
   useEffect(() => {
     const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      const appParam = params.get('app') as AppId | null;
-      setCurrentApp(appParam);
+      if (typeof window !== 'undefined') {
+        setIsStsRoute(window.location.pathname.startsWith('/sts'));
+        const params = new URLSearchParams(window.location.search);
+        const appParam = params.get('app') as AppId | null;
+        setCurrentApp(appParam);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -131,6 +141,20 @@ export default function App() {
     const next = !isDarkMode;
     setIsDarkMode(next);
     storage.setDarkMode(next);
+  };
+
+  const handleNavigateToSts = () => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/sts');
+      setIsStsRoute(true);
+    }
+  };
+
+  const handleExitSts = () => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/');
+      setIsStsRoute(false);
+    }
   };
 
   // Dynamic Launcher Configuration (Editable by Admin)
@@ -337,6 +361,20 @@ export default function App() {
 
   const appAccess = currentApp ? appRegistry.canUserAccessApp(currentApp) : { allowed: true };
 
+  if (isStsRoute) {
+    return (
+      <StsAdminPortal
+        tiles={launcherTiles}
+        onSaveTiles={handleSaveTiles}
+        onResetTiles={handleResetTiles}
+        pageLayout={pageLayout}
+        onSavePageLayout={handleSavePageLayout}
+        onExitSts={handleExitSts}
+        lang={lang}
+      />
+    );
+  }
+
   return (
     <div
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
@@ -373,6 +411,7 @@ export default function App() {
           setShowPwaModal(true);
         }}
         onOpenInternalMail={() => setShowInternalMailModal(true)}
+        onNavigateToSts={handleNavigateToSts}
       />
 
       {/* Main View Area */}

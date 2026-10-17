@@ -3,6 +3,7 @@ import { AppId, RecentDocument, DynamicAppTile, PageLayoutConfig } from '../../t
 import { DynamicIconRenderer } from '../admin/DynamicIconRenderer';
 import { storage } from '../../services/storage';
 import { SaudiSearchHero } from './SaudiSearchHero';
+import { RoyalLeadershipBanner } from './RoyalLeadershipBanner';
 import {
   WordIcon,
   ExcelIcon,
@@ -362,7 +363,9 @@ export const LauncherHub: React.FC<LauncherHubProps> = ({
           onOpenPwaModal={() => onOpenPwaModal && onOpenPwaModal()}
         />
       ) : pageLayout.showHeroBanner ? (
-        <div className="w-full bg-gradient-to-r from-emerald-800 via-teal-700 to-slate-900 rounded-3xl p-5 sm:p-7 mb-6 text-white shadow-md relative overflow-hidden">
+        <>
+          <RoyalLeadershipBanner lang={lang} />
+          <div className="w-full bg-gradient-to-r from-emerald-800 via-teal-700 to-slate-900 rounded-3xl p-5 sm:p-7 mb-6 text-white shadow-md relative overflow-hidden">
           <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-start flex-1">
               <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-xs px-2.5 py-0.5 rounded-full text-[11px] font-semibold mb-2">
@@ -407,6 +410,7 @@ export const LauncherHub: React.FC<LauncherHubProps> = ({
           </div>
           <div className="absolute end-0 bottom-0 translate-x-12 translate-y-12 w-52 h-52 bg-white/10 rounded-full blur-2xl pointer-events-none" />
         </div>
+        </>
       ) : null}
 
       {/* Categories & Filter Tabs Bar with Luxury Smooth Horizontal Navigation */}
