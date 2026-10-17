@@ -583,6 +583,40 @@ export const TopNav: React.FC<TopNavProps> = ({
           <Settings className="w-4 h-4" />
         </button>
 
+        {/* Dynamic User Profile / Login Action */}
+        {userProfile.isAuthenticated ? (
+          <button
+            onClick={() => {
+              const next = !showProfile;
+              closeAllMenus();
+              setShowProfile(next);
+            }}
+            className="flex items-center gap-2 ps-1.5 pe-3 py-1 bg-white/15 hover:bg-white/25 text-white rounded-full font-bold text-xs transition cursor-pointer shadow-xs border border-white/30 group"
+            title={`${userProfile.name} (${userProfile.email})`}
+          >
+            <div className={`w-6 h-6 rounded-full ${userProfile.avatarColor || 'bg-[#0078D4]'} text-white font-black text-[11px] flex items-center justify-center border border-white/60 shadow-xs ring-1 ring-white/40 group-hover:scale-105 transition-transform`}>
+              {userProfile.avatarInitials || 'SN'}
+            </div>
+            <span className="truncate max-w-[110px] text-white">
+              {userProfile.name.split(' ')[0]}
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ring-2 ring-emerald-400/40" title={isAr ? 'متصل' : 'Online'} />
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              closeAllMenus();
+              setLoginModalTab('signin');
+              setShowLoginModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-full font-bold text-xs transition cursor-pointer shadow-sm border border-blue-400/40"
+            title={isAr ? 'إنشاء حساب جديد أو تسجيل الدخول' : 'Sign In or Create Account'}
+          >
+            <User className="w-3.5 h-3.5 text-blue-100" />
+            <span>{isAr ? 'دخول / حساب جديد' : 'Sign In / Up'}</span>
+          </button>
+        )}
+
         {/* Biometric Quick Login Action */}
         <button
           onClick={() => {
@@ -606,8 +640,8 @@ export const TopNav: React.FC<TopNavProps> = ({
           )}
         </button>
 
-        {/* User avatar */}
-        <div className="relative ms-1">
+        {/* User avatar menu trigger */}
+        <div className="relative ms-0.5">
           <button
             onClick={() => {
               const next = !showProfile;
@@ -615,7 +649,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               setShowProfile(next);
             }}
             title={`${userProfile.name} (${userProfile.email})`}
-            className="w-8 h-8 rounded-full bg-white text-[#0078D4] font-bold text-xs flex items-center justify-center border-2 border-sky-200 shadow-sm hover:ring-2 hover:ring-white transition cursor-pointer"
+            className={`w-8 h-8 rounded-full ${userProfile.avatarColor || 'bg-white'} text-[#0078D4] ${userProfile.avatarColor ? 'text-white' : ''} font-bold text-xs flex items-center justify-center border-2 border-sky-200 shadow-sm hover:ring-2 hover:ring-white transition cursor-pointer`}
           >
             {userProfile.avatarInitials || 'SN'}
           </button>

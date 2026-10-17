@@ -169,8 +169,10 @@ export interface UserProfile {
   department: string;
   departmentAr: string;
   avatarInitials: string;
+  avatarColor?: string;
   statusText?: string;
   security?: UserSecuritySettings;
+  isAuthenticated?: boolean;
 }
 
 export interface TaskItem {

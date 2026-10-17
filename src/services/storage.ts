@@ -1142,7 +1142,9 @@ export const storage = {
       department: target.department,
       departmentAr: target.departmentAr,
       avatarInitials: target.avatarInitials,
+      avatarColor: (target as any).avatarColor || 'bg-blue-600',
       statusText: target.statusText,
+      isAuthenticated: true,
     });
     return updated;
   },
@@ -1160,6 +1162,17 @@ export const storage = {
         ? `${words[0][0]}${words[1][0]}`.toUpperCase()
         : (trimmedName.slice(0, 2) || 'SN').toUpperCase();
 
+    const colors = [
+      'bg-blue-600',
+      'bg-indigo-600',
+      'bg-emerald-600',
+      'bg-amber-600',
+      'bg-purple-600',
+      'bg-rose-600',
+      'bg-cyan-600',
+    ];
+    const pickedColor = colors[Math.floor(Math.random() * colors.length)];
+
     const profile: Partial<UserProfile> = {
       id: `user-${Date.now()}`,
       name: trimmedName,
@@ -1171,8 +1184,10 @@ export const storage = {
       department: 'Corporate Cloud Productivity Hub',
       departmentAr: 'مساحة العمل والإنتاجية السحابية المعتمدة',
       avatarInitials: initials,
+      avatarColor: pickedColor,
       statusText: 'متصل ومعتمد عبر snns.pro',
       security: DEFAULT_SECURITY_SETTINGS,
+      isAuthenticated: true,
     };
 
     const saved = storage.saveUserProfile(profile);
@@ -1180,16 +1195,6 @@ export const storage = {
     // Also register in directory users if not already present
     const dir = storage.getDirectoryUsers();
     if (!dir.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      const colors = [
-        'bg-blue-600',
-        'bg-indigo-600',
-        'bg-emerald-600',
-        'bg-amber-600',
-        'bg-purple-600',
-        'bg-rose-600',
-        'bg-cyan-600',
-      ];
-      const randomColor = colors[dir.length % colors.length];
       const newDirUser: DirectoryUser = {
         id: profile.id!,
         name: trimmedName,

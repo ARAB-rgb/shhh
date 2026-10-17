@@ -22,7 +22,12 @@ import {
   Copy,
   Sliders,
   Eye,
+  EyeOff,
   Settings2,
+  UserPlus,
+  LogIn,
+  Phone,
+  Key,
 } from 'lucide-react';
 import {
   storage,
@@ -46,7 +51,7 @@ export const UserLoginModal: React.FC<UserLoginModalProps> = ({
   isOpen,
   onClose,
   lang,
-  initialTab = 'biometrics',
+  initialTab = 'signin',
   onLoginSuccess,
 }) => {
   const isAr = lang === 'ar';
@@ -62,6 +67,15 @@ export const UserLoginModal: React.FC<UserLoginModalProps> = ({
   const [activeTab, setActiveTab] = useState<'biometrics' | 'signin' | 'directory' | 'security'>(
     initialTab
   );
+
+  // Authentication Mode: 'register' (إنشاء حساب جديد) vs 'login' (تسجيل دخول)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('register');
+  const [loginEmailOrHandle, setLoginEmailOrHandle] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   // Biometric scanner state
   const [biometricMethod, setBiometricMethod] = useState<'fingerprint' | 'face' | 'passkey'>('face');
@@ -104,6 +118,10 @@ export const UserLoginModal: React.FC<UserLoginModalProps> = ({
       setTwoFactorError(null);
       setNameInput('');
       setCustomHandle('');
+      setLoginEmailOrHandle(freshUser.email || '');
+      setAuthPassword('');
+      setAuthConfirmPassword('');
+      setAuthError(null);
       setIsCustomizingHandle(false);
       setActive2FACode(storage.getCurrent2FACode());
       setTimeLeft2FA(storage.getTimeRemaining2FA());
@@ -371,35 +389,158 @@ export const UserLoginModal: React.FC<UserLoginModalProps> = ({
     }, 700);
   };
 
-  const handleCustomLogin = (e: React.FormEvent) => {
+  // Loading state for form submit
+  const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
+
+  // 1. Create New Account (إنشاء حساب جديد)
+  const handleRegisterAccount = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nameInput.trim()) return;
+    setAuthError(null);
+
+    const cleanName = nameInput.trim();
+    if (!cleanName) {
+      setAuthError(isAr ? 'يرجى كتابة الاسم الكامل' : 'Please enter full name');
+      return;
+    }
+
+    if (authPassword && authPassword.length < 4) {
+      setAuthError(isAr ? 'يجب أن لا تقل كلمة المرور عن 4 خانات' : 'Password must be at least 4 characters');
+      return;
+    }
+
+    if (authPassword && authConfirmPassword && authPassword !== authConfirmPassword) {
+      setAuthError(isAr ? 'كلمات المرور غير متطابقة' : 'Passwords do not match');
+      return;
+    }
+
+    setIsSubmittingAuth(true);
 
     const updated = storage.loginAsNewUser(
-      nameInput.trim(),
+      cleanName,
       isCustomizingHandle ? customHandle.trim() : undefined,
       selectedRole
     );
 
+    // Save optional phone
+    if (phoneNumber.trim()) {
+      storage.saveUserProfile({ statusText: `هاتف: ${phoneNumber.trim()}` });
+    }
+
     setCurrentUser(updated);
     setDirectoryUsers(storage.getDirectoryUsers());
     setSecuritySettings(updated.security || DEFAULT_SECURITY_SETTINGS);
+    biometricFeedback.playSuccessChime();
 
-    // If 2FA enabled, ask for code, otherwise login directly
-    if (securitySettings.twoFactorEnabled) {
-      setStep2FA(true);
-    } else {
+    setToastMessage(
+      isAr
+        ? `تم إنشاء حسابك بنجاح! بريدك المعتمد الجديد: ${updated.email} 🎉`
+        : `Account created successfully! Your verified email: ${updated.email} 🎉`
+    );
+
+    setTimeout(() => {
+      setIsSubmittingAuth(false);
+      stopCamera();
+      if (onLoginSuccess) onLoginSuccess(updated);
+      onClose();
+    }, 700);
+  };
+
+  // 2. Login to Existing Account (تسجيل دخول لحساب سابق)
+  const handleExistingLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+
+    const raw = loginEmailOrHandle.trim();
+    if (!raw) {
+      setAuthError(isAr ? 'يرجى إدخال البريد الإلكتروني أو اسم المستخدم' : 'Please enter email or username');
+      return;
+    }
+
+    setIsSubmittingAuth(true);
+
+    const term = raw.toLowerCase().replace(/^@+/, '');
+    const allMembers = storage.getDirectoryUsers();
+
+    // Match by full email, username prefix, or name
+    let foundUser = allMembers.find((u) => {
+      const emailLower = u.email.toLowerCase();
+      const prefix = emailLower.split('@')[0];
+      const nameLower = u.name.toLowerCase();
+      return (
+        emailLower === term ||
+        prefix === term ||
+        nameLower === term ||
+        emailLower === `${term}@${PRIMARY_DOMAIN}` ||
+        nameLower.includes(term) ||
+        term.includes(nameLower)
+      );
+    });
+
+    // Also check current active user
+    const active = storage.getUserProfile();
+    if (!foundUser && (active.email.toLowerCase() === term || active.username.toLowerCase() === term || active.name.toLowerCase() === term)) {
+      foundUser = {
+        id: active.id,
+        name: active.name,
+        email: active.email,
+        role: active.role,
+        roleAr: active.roleAr,
+        department: active.department,
+        departmentAr: active.departmentAr,
+        avatarInitials: active.avatarInitials,
+        avatarColor: 'bg-blue-600',
+        statusText: active.statusText,
+      };
+    }
+
+    if (foundUser) {
+      const switched = storage.switchUser(foundUser);
+      setCurrentUser(switched);
+      setSecuritySettings(switched.security || DEFAULT_SECURITY_SETTINGS);
+      biometricFeedback.playSuccessChime();
+
       setToastMessage(
         isAr
-          ? `أهلاً بك ${updated.name}! بريدك الشخصي المعتمد هو: ${updated.email}`
-          : `Welcome ${updated.name}! Your verified personal email is: ${updated.email}`
+          ? `مرحباً بعودتك ${switched.name}! تم تسجيل الدخول بنجاح ✓`
+          : `Welcome back ${switched.name}! Successfully signed in ✓`
       );
+
       setTimeout(() => {
+        setIsSubmittingAuth(false);
         stopCamera();
-        if (onLoginSuccess) onLoginSuccess(updated);
+        if (onLoginSuccess) onLoginSuccess(switched);
         onClose();
-      }, 800);
+      }, 600);
+    } else {
+      // Create or switch dynamic account for that handle/name
+      const cleanHandle = term.includes('@') ? term.split('@')[0] : term.replace(/[^a-z0-9._-]/g, '');
+      const dynamicName = raw.includes('@') ? raw.split('@')[0] : raw;
+      const dynamicUser = storage.loginAsNewUser(
+        dynamicName,
+        cleanHandle || undefined
+      );
+
+      setCurrentUser(dynamicUser);
+      setDirectoryUsers(storage.getDirectoryUsers());
+      biometricFeedback.playSuccessChime();
+
+      setToastMessage(
+        isAr
+          ? `تم الدخول بنجاح بحساب: ${dynamicUser.email} ✓`
+          : `Signed in as verified user: ${dynamicUser.email} ✓`
+      );
+
+      setTimeout(() => {
+        setIsSubmittingAuth(false);
+        stopCamera();
+        if (onLoginSuccess) onLoginSuccess(dynamicUser);
+        onClose();
+      }, 600);
     }
+  };
+
+  const handleCustomLogin = (e: React.FormEvent) => {
+    handleRegisterAccount(e);
   };
 
   if (!isOpen) return null;
@@ -500,6 +641,24 @@ export const UserLoginModal: React.FC<UserLoginModalProps> = ({
           <button
             onClick={() => {
               setStep2FA(false);
+              setActiveTab('signin');
+            }}
+            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shrink-0 ${
+              activeTab === 'signin'
+                ? 'bg-white text-[#0078D4] shadow-xs border border-gray-200/80'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
+            }`}
+          >
+            {authMode === 'register' ? (
+              <UserPlus className="w-3.5 h-3.5 text-[#0078D4]" />
+            ) : (
+              <LogIn className="w-3.5 h-3.5 text-[#0078D4]" />
+            )}
+            <span>{isAr ? 'إنشاء حساب / دخول' : 'Sign Up / Sign In'}</span>
+          </button>
+          <button
+            onClick={() => {
+              setStep2FA(false);
               setActiveTab('biometrics');
             }}
             className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shrink-0 ${
@@ -509,21 +668,7 @@ export const UserLoginModal: React.FC<UserLoginModalProps> = ({
             }`}
           >
             <ScanFace className="w-3.5 h-3.5 text-[#0078D4]" />
-            <span>{isAr ? 'العلامات الحيوية (Biometrics)' : 'Biometrics'}</span>
-          </button>
-          <button
-            onClick={() => {
-              setStep2FA(false);
-              setActiveTab('signin');
-            }}
-            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shrink-0 ${
-              activeTab === 'signin'
-                ? 'bg-white text-[#0078D4] shadow-xs border border-gray-200/80'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>{isAr ? 'إدخال الاسم (@snns.pro)' : 'Enter Name'}</span>
+            <span>{isAr ? 'العلامات الحيوية' : 'Biometrics'}</span>
           </button>
           <button
             onClick={() => {
@@ -898,117 +1043,343 @@ export const UserLoginModal: React.FC<UserLoginModalProps> = ({
             </div>
           ) : activeTab === 'signin' ? (
             /* ========================================================= */
-            /* TAB 2: ENTER NAME AND GENERATE REAL @snns.pro EMAIL        */
+            /* TAB 2: SIGN UP (إنشاء حساب) OR SIGN IN (تسجيل دخول)       */
             /* ========================================================= */
-            <form onSubmit={handleCustomLogin} className="space-y-4 animate-in fade-in">
-              <div>
-                <label className="font-bold text-gray-900 text-xs block mb-1.5">
-                  {isAr
-                    ? 'الاسم الكامل للمستخدم (عربي أو إنجليزي):'
-                    : 'User Full Name (Arabic or English):'}
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    placeholder={
-                      isAr
-                        ? 'مثال: هتاف أونلاين، أحمد الشهري، سارة المنصور، Faisal...'
-                        : 'e.g. Htaf Online, Ahmed Al-Shehri, Sarah Miller...'
-                    }
-                    className="w-full ps-10 pe-4 py-2.5 bg-gray-50 border border-gray-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] text-xs font-semibold text-gray-900 transition"
-                  />
-                </div>
-                <p className="text-[11px] text-gray-500 mt-1">
-                  {isAr
-                    ? '💡 بمجرد كتابة اسمك يتحول تلقائياً إلى بريد حقيقي معتمد على دومين snns.pro.'
-                    : '💡 As soon as you type, your official snns.pro email is instantly composed.'}
-                </p>
+            <div className="space-y-4 animate-in fade-in">
+              {/* Mode Switcher Buttons */}
+              <div className="flex bg-gray-100 p-1 rounded-2xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('register');
+                    setAuthError(null);
+                  }}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    authMode === 'register'
+                      ? 'bg-white text-[#0078D4] shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>{isAr ? 'إنشاء حساب جديد' : 'Create Account'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('login');
+                    setAuthError(null);
+                  }}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    authMode === 'login'
+                      ? 'bg-white text-[#0078D4] shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>{isAr ? 'تسجيل الدخول' : 'Sign In'}</span>
+                </button>
               </div>
 
-              {/* Dynamic Live Email Card */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-[#0078D4]" />
-                    {isAr ? 'البريد الإلكتروني المعتمد التلقائي:' : 'Provisioned Real Corporate Email:'}
-                  </span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Check className="w-2.5 h-2.5" />
-                    {isAr ? 'نطاق موثق snns.pro' : 'Verified snns.pro'}
-                  </span>
+              {/* Error banner */}
+              {authError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3.5 py-2 rounded-xl flex items-center gap-2 text-xs font-bold animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
                 </div>
+              )}
 
-                <div className="bg-white rounded-xl p-3 border border-blue-200/80 flex items-center justify-between gap-2 shadow-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-7 h-7 rounded-lg bg-[#0078D4] text-white font-black text-xs flex items-center justify-center shrink-0">
-                      @
-                    </span>
-                    <span className="font-mono text-xs sm:text-sm font-bold text-[#0078D4] truncate">
-                      {liveEmail}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-gray-400 shrink-0">
-                    {PRIMARY_DOMAIN}
-                  </span>
-                </div>
-
-                {/* Custom Handle Toggle */}
-                <div className="flex items-center justify-between pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomizingHandle(!isCustomizingHandle)}
-                    className="text-[11px] font-semibold text-[#0078D4] hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>
-                      {isCustomizingHandle
-                        ? (isAr ? 'استخدام التسمية التلقائية' : 'Use auto-generated handle')
-                        : (isAr ? '⚙️ تخصيص اسم المعرف (Username) يدوياً' : '⚙️ Customize handle prefix')}
-                    </span>
-                  </button>
-                  <span className="text-[10px] text-gray-500">
-                    {isAr ? 'بدون أشياء وهمية' : 'Zero placeholders'}
-                  </span>
-                </div>
-
-                {isCustomizingHandle && (
-                  <div className="pt-2 animate-in fade-in">
-                    <div className="flex items-center gap-1.5 bg-white border border-gray-300 rounded-xl px-2.5 py-1.5">
-                      <span className="text-gray-400 font-mono text-xs">https://</span>
+              {/* FORM A: CREATE NEW ACCOUNT (إنشاء حساب جديد) */}
+              {authMode === 'register' ? (
+                <form onSubmit={handleRegisterAccount} className="space-y-3.5">
+                  <div>
+                    <label className="font-bold text-gray-900 text-xs block mb-1">
+                      {isAr ? 'الاسم الكامل أو اسم الجهة:' : 'Full Name or Organization:'}
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input
                         type="text"
-                        value={customHandle}
-                        onChange={(e) => setCustomHandle(e.target.value)}
-                        placeholder={previewUsername}
-                        className="flex-1 bg-transparent text-xs font-mono font-bold text-gray-900 focus:outline-none"
+                        required
+                        autoFocus
+                        value={nameInput}
+                        onChange={(e) => setNameInput(e.target.value)}
+                        placeholder={
+                          isAr
+                            ? 'مثال: أحمد الشهري، هتاف أونلاين، شركة الأفق...'
+                            : 'e.g. Ahmed Al-Shehri, Htaf Online, Skyline Co...'
+                        }
+                        className="w-full ps-10 pe-4 py-2.5 bg-gray-50 border border-gray-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] text-xs font-semibold text-gray-900 transition"
                       />
-                      <span className="font-mono font-bold text-blue-700 text-xs">
-                        @{PRIMARY_DOMAIN}
-                      </span>
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={!nameInput.trim()}
-                className="w-full py-3 bg-[#0078D4] hover:bg-[#106EBE] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer"
-              >
-                <Lock className="w-4 h-4" />
-                <span>
-                  {isAr
-                    ? `تسجيل الدخول واعتماد البريد الرسمي (${liveEmail})`
-                    : `Sign In with Official Corporate Email (${liveEmail})`}
-                </span>
-                <ArrowRight className={`w-4 h-4 ${isAr ? 'rotate-180' : ''}`} />
-              </button>
-            </form>
+                  {/* Provisioned Email Preview */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-blue-900 flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5 text-[#0078D4]" />
+                        {isAr ? 'بريدك الرسمي في المنظومة:' : 'Your Official SNNS Email:'}
+                      </span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" />
+                        {isAr ? 'معتمد snns.pro' : 'snns.pro verified'}
+                      </span>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-2.5 border border-blue-200/80 flex items-center justify-between gap-2 shadow-2xs">
+                      <span className="font-mono text-xs sm:text-sm font-bold text-[#0078D4] truncate">
+                        {liveEmail}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomizingHandle(!isCustomizingHandle)}
+                        className="text-[10px] text-gray-500 hover:text-[#0078D4] font-semibold underline cursor-pointer shrink-0"
+                      >
+                        {isCustomizingHandle ? (isAr ? 'تلقائي' : 'Auto') : (isAr ? 'تخصيص المعرف' : 'Customize')}
+                      </button>
+                    </div>
+
+                    {isCustomizingHandle && (
+                      <div className="pt-1 animate-in fade-in">
+                        <div className="flex items-center gap-1.5 bg-white border border-gray-300 rounded-xl px-2.5 py-1.5">
+                          <input
+                            type="text"
+                            value={customHandle}
+                            onChange={(e) => setCustomHandle(e.target.value)}
+                            placeholder={previewUsername}
+                            className="flex-1 bg-transparent text-xs font-mono font-bold text-gray-900 focus:outline-none"
+                          />
+                          <span className="font-mono font-bold text-blue-700 text-xs">
+                            @{PRIMARY_DOMAIN}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Password & Confirm Password */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="font-bold text-gray-900 text-[11px] block mb-1">
+                        {isAr ? 'كلمة المرور:' : 'Password:'}
+                      </label>
+                      <div className="relative">
+                        <Key className="w-3.5 h-3.5 absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          value={authPassword}
+                          onChange={(e) => setAuthPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full ps-9 pe-8 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] text-xs font-semibold text-gray-900"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute end-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-gray-900 text-[11px] block mb-1">
+                        {isAr ? 'تأكيد كلمة المرور:' : 'Confirm Password:'}
+                      </label>
+                      <div className="relative">
+                        <Key className="w-3.5 h-3.5 absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          value={authConfirmPassword}
+                          onChange={(e) => setAuthConfirmPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full ps-9 pe-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] text-xs font-semibold text-gray-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional Phone / Role selection */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="font-bold text-gray-700 text-[11px] block mb-1">
+                        {isAr ? 'رقم الهاتف (اختياري):' : 'Phone (Optional):'}
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-3.5 h-3.5 absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="tel"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          placeholder="05xxxxxxxx"
+                          className="w-full ps-9 pe-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] text-xs text-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-gray-700 text-[11px] block mb-1">
+                        {isAr ? 'الدور الوظيفي:' : 'Role:'}
+                      </label>
+                      <select
+                        value={selectedRole}
+                        onChange={(e) => setSelectedRole(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] text-xs font-medium text-gray-900"
+                      >
+                        <option value="عضو معتمد في منظومة SNNS">{isAr ? 'عضو معتمد' : 'Verified Member'}</option>
+                        <option value="مدير النظام المعتمد">{isAr ? 'مدير نظام معتمد' : 'System Administrator'}</option>
+                        <option value="مسؤول مالي">{isAr ? 'مسؤول مالي ومحاسبي' : 'Finance Manager'}</option>
+                        <option value="كاشير ونقاط بيع">{isAr ? 'كاشير ومبيعات' : 'Cashier'}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Register Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={!nameInput.trim()}
+                    className="w-full py-3 bg-[#0078D4] hover:bg-[#106EBE] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer mt-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>
+                      {isAr
+                        ? `إنشاء الحساب واعتماد (${liveEmail})`
+                        : `Create Account & Register (${liveEmail})`}
+                    </span>
+                    <ArrowRight className={`w-4 h-4 ${isAr ? 'rotate-180' : ''}`} />
+                  </button>
+                </form>
+              ) : (
+                /* FORM B: SIGN IN TO EXISTING ACCOUNT (تسجيل الدخول) */
+                <form onSubmit={handleExistingLogin} className="space-y-3.5">
+                  <div>
+                    <label className="font-bold text-gray-900 text-xs block mb-1">
+                      {isAr
+                        ? 'البريد الإلكتروني أو اسم المستخدم (Username):'
+                        : 'Corporate Email or Username:'}
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        required
+                        autoFocus
+                        value={loginEmailOrHandle}
+                        onChange={(e) => setLoginEmailOrHandle(e.target.value)}
+                        placeholder={
+                          isAr
+                            ? 'مثال: htaf أو htaf@snns.pro أو أحمد الشهري'
+                            : 'e.g. htaf, htaf@snns.pro, or your username'
+                        }
+                        className="w-full ps-10 pe-4 py-2.5 bg-gray-50 border border-gray-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] text-xs font-semibold text-gray-900 transition font-mono"
+                      />
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {isAr
+                        ? 'يمكنك كتابة البريد بالكامل أو اسمك المسجل مسبقاً.'
+                        : 'Enter full @snns.pro email or registered username.'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-bold text-gray-900 text-xs">
+                        {isAr ? 'كلمة المرور:' : 'Password:'}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('biometrics');
+                        }}
+                        className="text-[11px] text-[#0078D4] hover:underline font-semibold"
+                      >
+                        {isAr ? 'أو الدخول بالبصمة الحيوية ⚡' : 'Or Use Biometrics ⚡'}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Key className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full ps-10 pe-10 py-2.5 bg-gray-50 border border-gray-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] text-xs font-semibold text-gray-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quick Select from Registered Accounts */}
+                  {directoryUsers.length > 0 && (
+                    <div className="pt-1">
+                      <span className="text-[10px] text-gray-400 font-semibold block mb-1.5">
+                        {isAr ? 'أو اختر حساباً مسجلاً للدخول الفوري:' : 'Or click a registered account to sign in:'}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-gray-50/80 rounded-xl border border-gray-200">
+                        {directoryUsers.slice(0, 5).map((user) => (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => {
+                              setLoginEmailOrHandle(user.email);
+                              handleDirectorySelect(user);
+                            }}
+                            className="px-2.5 py-1 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg text-[11px] font-semibold text-gray-700 hover:text-blue-700 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                          >
+                            <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] flex items-center justify-center font-bold">
+                              {user.avatarInitials}
+                            </span>
+                            <span className="truncate max-w-[120px]">{user.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sign In Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={!loginEmailOrHandle.trim() || isSubmittingAuth}
+                    className="w-full py-3 bg-[#0078D4] hover:bg-[#106EBE] active:scale-[0.99] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer mt-2"
+                  >
+                    {isSubmittingAuth ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>{isAr ? 'جاري التحقق وتسجيل الدخول...' : 'Signing in...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-4 h-4" />
+                        <span>{isAr ? 'تسجيل الدخول للمنظومة' : 'Sign In to SNNS'}</span>
+                        <ArrowRight className={`w-4 h-4 ${isAr ? 'rotate-180' : ''}`} />
+                      </>
+                    )}
+                  </button>
+
+                  <div className="pt-2 text-center text-xs text-gray-500">
+                    <span>{isAr ? 'ليس لديك حساب بعد؟' : "Don't have an account?"}{' '}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('register');
+                        setAuthError(null);
+                      }}
+                      className="text-[#0078D4] font-bold hover:underline cursor-pointer"
+                    >
+                      {isAr ? 'إنشاء حساب جديد الآن' : 'Create new account'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           ) : activeTab === 'directory' ? (
             /* ========================================================= */
             /* TAB 3: CORPORATE DIRECTORY SWITCH                        */
