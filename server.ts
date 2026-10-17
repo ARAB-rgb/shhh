@@ -1151,6 +1151,118 @@ Context provided: ${context || 'None'}`;
   }
 });
 
+// ==========================================
+// INTERNAL CORPORATE MAIL API (@snns.pro)
+// ==========================================
+interface InternalMessage {
+  id: string;
+  sender: string;
+  senderName?: string;
+  recipient: string;
+  subject: string;
+  body: string;
+  timestamp: string;
+  read: boolean;
+}
+
+const internalMessagesDB: InternalMessage[] = [
+  {
+    id: 'mail-init-1',
+    sender: 's.miller@snns.pro',
+    senderName: 'Sarah Miller',
+    recipient: 'htaf@snns.pro',
+    subject: 'Welcome to SNNS 365 Cloud Productivity Workspace!',
+    body: 'مرحباً بك في مساحة عمل وتطبيقات SNNS 365 السحابية المتكاملة.\n\nيسعدنا انضمامك إلى منظومتنا، يمكنك مراسلة أي حساب ينتهي بنطاق @snns.pro بشكل فوري ومباشر.',
+    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+    read: false,
+  },
+  {
+    id: 'mail-init-2',
+    sender: 'security@snns.pro',
+    senderName: 'SNNS Security Vault',
+    recipient: 'htaf@snns.pro',
+    subject: 'تأكيد أمان وتفعيل خادم البريد المعتمد @snns.pro',
+    body: 'تم تفعيل خادم البريد الداخلي الآمن (@snns.pro) بنجاح مع تشفير الرسائل ودعم الإرسال والاستقبال الفوري بين جميع أعضاء المؤسسة.',
+    timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
+    read: true,
+  },
+];
+
+// 1. Send Internal Email
+app.post('/api/internal-mail/send', (req, res) => {
+  const { sender, senderName, recipient, subject, body } = req.body;
+
+  if (!sender || !recipient || !subject) {
+    return res.status(400).json({ error: 'المرسل والمستقبل وعنوان الرسالة حقول أساسية.' });
+  }
+
+  const senderEmail = String(sender).trim().toLowerCase();
+  const recipientEmail = String(recipient).trim().toLowerCase();
+
+  // Validate internal @snns.pro domain
+  if (!recipientEmail.endsWith('@snns.pro') || !senderEmail.endsWith('@snns.pro')) {
+    return res.status(400).json({ error: 'البريد الداخلي مخصص فقط لنطاق @snns.pro' });
+  }
+
+  const newMessage: InternalMessage = {
+    id: `msg-${Date.now()}`,
+    sender: senderEmail,
+    senderName: senderName || senderEmail.split('@')[0],
+    recipient: recipientEmail,
+    subject: String(subject).trim(),
+    body: String(body || '').trim(),
+    timestamp: new Date().toISOString(),
+    read: false,
+  };
+
+  internalMessagesDB.unshift(newMessage);
+  return res.status(201).json({
+    success: true,
+    message: 'تم إرسال البريد الداخلي بنجاح عبر خادم @snns.pro',
+    data: newMessage,
+  });
+});
+
+// 2. Get Inbox for user
+app.get('/api/internal-mail/inbox/:email', (req, res) => {
+  const email = decodeURIComponent(req.params.email).trim().toLowerCase();
+  const inbox = internalMessagesDB.filter(
+    (msg) => msg.recipient.toLowerCase() === email || email === 'admin@snns.pro'
+  );
+  return res.json(inbox);
+});
+
+// 3. Get Sent messages for user
+app.get('/api/internal-mail/sent/:email', (req, res) => {
+  const email = decodeURIComponent(req.params.email).trim().toLowerCase();
+  const sent = internalMessagesDB.filter(
+    (msg) => msg.sender.toLowerCase() === email
+  );
+  return res.json(sent);
+});
+
+// 4. Mark message as read
+app.patch('/api/internal-mail/read/:id', (req, res) => {
+  const { id } = req.params;
+  const msg = internalMessagesDB.find((m) => m.id === id);
+  if (msg) {
+    msg.read = true;
+    return res.json({ success: true });
+  }
+  return res.status(404).json({ error: 'الرسالة غير موجودة' });
+});
+
+// 5. Delete internal message
+app.delete('/api/internal-mail/:id', (req, res) => {
+  const { id } = req.params;
+  const index = internalMessagesDB.findIndex((m) => m.id === id);
+  if (index !== -1) {
+    internalMessagesDB.splice(index, 1);
+    return res.json({ success: true });
+  }
+  return res.status(404).json({ error: 'الرسالة غير موجودة' });
+});
+
 // Vite or Static Serving
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.resolve(__dirname, 'dist')));

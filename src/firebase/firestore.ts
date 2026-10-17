@@ -50,7 +50,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
       isAnonymous: auth.currentUser?.isAnonymous,
       tenantId: auth.currentUser?.tenantId,
       providerInfo:
-        auth.currentUser?.providerData?.map((provider) => ({
+        auth.currentUser?.providerData?.map((provider: any) => ({
           providerId: provider.providerId,
           email: provider.email,
         })) || [],
@@ -221,9 +221,9 @@ export function subscribeToIndexedSites(
 
   return onSnapshot(
     q,
-    (snapshot) => {
+    (snapshot: any) => {
       const sites: IndexedSite[] = [];
-      snapshot.forEach((docSnap) => {
+      snapshot.forEach((docSnap: any) => {
         sites.push(docSnap.data() as IndexedSite);
       });
       // If collection is empty, fall back to seed list immediately so the UI is never empty
@@ -233,7 +233,7 @@ export function subscribeToIndexedSites(
         onData(sites);
       }
     },
-    (error) => {
+    (error: any) => {
       handleFirestoreError(error, OperationType.GET, path);
       if (onError) onError(error);
     }
@@ -367,15 +367,15 @@ export function subscribeToTrendingQueries(onData: (queries: string[]) => void):
 
   return onSnapshot(
     q,
-    (snapshot) => {
+    (snapshot: any) => {
       const terms: string[] = [];
-      snapshot.forEach((docSnap) => {
+      snapshot.forEach((docSnap: any) => {
         const data = docSnap.data() as SearchQueryItem;
         if (data.query) terms.push(data.query);
       });
       onData(terms);
     },
-    (error) => {
+    (error: any) => {
       console.warn('Trending queries listener error:', error);
     }
   );

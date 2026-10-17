@@ -73,6 +73,7 @@ interface TopNavProps {
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
   onOpenPwaModal?: () => void;
+  onOpenInternalMail?: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
@@ -89,6 +90,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   isDarkMode = true,
   onToggleDarkMode,
   onOpenPwaModal,
+  onOpenInternalMail,
 }) => {
   const [showWaffle, setShowWaffle] = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
@@ -96,6 +98,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [searchVal, setSearchVal] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+  const [unreadMailCount, setUnreadMailCount] = useState<number>(0);
 
   // User Profile with official @snns.pro email
   const [userProfile, setUserProfile] = useState<UserProfile>(() => storage.getUserProfile());
@@ -104,6 +107,25 @@ export const TopNav: React.FC<TopNavProps> = ({
   const [isEditingProfileName, setIsEditingProfileName] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState('');
   const [isServerAdminVerified, setIsServerAdminVerified] = useState<boolean>(() => adminService.isVerifiedAdmin());
+
+  // Live polling for unread internal mail count
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const safeEmail = (userProfile.email || 'user@snns.pro').toLowerCase();
+        const res = await fetch(`/api/internal-mail/inbox/${encodeURIComponent(safeEmail)}`);
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            setUnreadMailCount(list.filter((m: any) => !m.read).length);
+          }
+        }
+      } catch {}
+    };
+    fetchUnread();
+    const timer = setInterval(fetchUnread, 7000);
+    return () => clearInterval(timer);
+  }, [userProfile.email]);
 
   // Check admin verification on mount and on auth change events
   useEffect(() => {
@@ -466,6 +488,27 @@ export const TopNav: React.FC<TopNavProps> = ({
           {isAr ? 'EN' : 'عربي'}
         </button>
 
+        {/* Internal Mail shortcut with unread badge */}
+        <button
+          onClick={() => {
+            closeAllMenus();
+            if (onOpenInternalMail) {
+              onOpenInternalMail();
+            } else {
+              onSelectApp('outlook');
+            }
+          }}
+          className="p-2 hover:bg-white/15 rounded-xl transition relative text-white cursor-pointer"
+          title={isAr ? 'بريد SNNS الداخلي (@snns.pro)' : 'SNNS Internal Mailbox'}
+        >
+          <Mail className="w-4 h-4 text-emerald-300 hover:text-emerald-200" />
+          {unreadMailCount > 0 && (
+            <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-emerald-400 text-slate-950 font-black text-[9px] flex items-center justify-center animate-pulse shadow-sm">
+              {unreadMailCount}
+            </span>
+          )}
+        </button>
+
         {/* Notifications */}
         <div className="relative">
           <button
@@ -583,76 +626,40 @@ export const TopNav: React.FC<TopNavProps> = ({
           <Settings className="w-4 h-4" />
         </button>
 
-        {/* Dynamic User Profile / Login Action */}
-        {userProfile.isAuthenticated ? (
-          <button
-            onClick={() => {
-              const next = !showProfile;
-              closeAllMenus();
-              setShowProfile(next);
-            }}
-            className="flex items-center gap-2 ps-1.5 pe-3 py-1 bg-white/15 hover:bg-white/25 text-white rounded-full font-bold text-xs transition cursor-pointer shadow-xs border border-white/30 group"
-            title={`${userProfile.name} (${userProfile.email})`}
-          >
-            <div className={`w-6 h-6 rounded-full ${userProfile.avatarColor || 'bg-[#0078D4]'} text-white font-black text-[11px] flex items-center justify-center border border-white/60 shadow-xs ring-1 ring-white/40 group-hover:scale-105 transition-transform`}>
-              {userProfile.avatarInitials || 'SN'}
-            </div>
-            <span className="truncate max-w-[110px] text-white">
-              {userProfile.name.split(' ')[0]}
-            </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ring-2 ring-emerald-400/40" title={isAr ? 'متصل' : 'Online'} />
-          </button>
-        ) : (
-          <button
-            onClick={() => {
-              closeAllMenus();
-              setLoginModalTab('signin');
-              setShowLoginModal(true);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-full font-bold text-xs transition cursor-pointer shadow-sm border border-blue-400/40"
-            title={isAr ? 'إنشاء حساب جديد أو تسجيل الدخول' : 'Sign In or Create Account'}
-          >
-            <User className="w-3.5 h-3.5 text-blue-100" />
-            <span>{isAr ? 'دخول / حساب جديد' : 'Sign In / Up'}</span>
-          </button>
-        )}
-
-        {/* Biometric Quick Login Action */}
-        <button
-          onClick={() => {
-            closeAllMenus();
-            setLoginModalTab('biometrics');
-            setShowLoginModal(true);
-          }}
-          className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-sky-950/70 to-blue-900/80 hover:from-sky-900 hover:to-blue-800 text-white rounded-full border border-cyan-400/30 shadow-xs hover:shadow-cyan-500/20 transition cursor-pointer text-xs"
-          title={isAr ? 'الدخول السريع بالعلامات الحيوية (Face ID / بصمة الإصبع)' : 'Quick Biometric Sign-In (Face / Touch ID)'}
-        >
-          <ScanFace className="w-3.5 h-3.5 text-cyan-300" />
-          <span className="hidden sm:inline font-bold text-[11px] text-cyan-100">
-            {isAr ? 'العلامات الحيوية' : 'Biometrics'}
-          </span>
-          {userProfile.security?.twoFactorEnabled ? (
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ring-2 ring-emerald-400/30" title={isAr ? '2FA مفعلة (اختياري)' : '2FA Enabled'} />
+        {/* Unified Dynamic User Avatar & Account Button */}
+        <div className="relative ms-1">
+          {userProfile.isAuthenticated ? (
+            <button
+              onClick={() => {
+                const next = !showProfile;
+                closeAllMenus();
+                setShowProfile(next);
+              }}
+              className="flex items-center gap-2 ps-1.5 pe-3 py-1 bg-white/15 hover:bg-white/25 text-white rounded-full font-bold text-xs transition cursor-pointer shadow-xs border border-white/30 group"
+              title={`${userProfile.name} (${userProfile.email})`}
+            >
+              <div className={`w-7 h-7 rounded-full ${userProfile.avatarColor || 'bg-[#0078D4]'} text-white font-black text-xs flex items-center justify-center border border-white/60 shadow-xs ring-1 ring-white/40 group-hover:scale-105 transition-transform`}>
+                {userProfile.avatarInitials || 'SN'}
+              </div>
+              <span className="truncate max-w-[110px] text-white">
+                {userProfile.name.split(' ')[0]}
+              </span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/40" title={isAr ? 'متصل' : 'Online'} />
+            </button>
           ) : (
-            <span className="text-[9px] text-sky-200/70 font-mono hidden md:inline">
-              {isAr ? 'بصمة' : 'Touch'}
-            </span>
+            <button
+              onClick={() => {
+                closeAllMenus();
+                setLoginModalTab('signin');
+                setShowLoginModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-full font-bold text-xs transition cursor-pointer shadow-sm border border-blue-400/40"
+              title={isAr ? 'إنشاء حساب جديد أو تسجيل الدخول' : 'Sign In or Create Account'}
+            >
+              <User className="w-3.5 h-3.5 text-blue-100" />
+              <span>{isAr ? 'دخول / حساب جديد' : 'Sign In / Up'}</span>
+            </button>
           )}
-        </button>
-
-        {/* User avatar menu trigger */}
-        <div className="relative ms-0.5">
-          <button
-            onClick={() => {
-              const next = !showProfile;
-              closeAllMenus();
-              setShowProfile(next);
-            }}
-            title={`${userProfile.name} (${userProfile.email})`}
-            className={`w-8 h-8 rounded-full ${userProfile.avatarColor || 'bg-white'} text-[#0078D4] ${userProfile.avatarColor ? 'text-white' : ''} font-bold text-xs flex items-center justify-center border-2 border-sky-200 shadow-sm hover:ring-2 hover:ring-white transition cursor-pointer`}
-          >
-            {userProfile.avatarInitials || 'SN'}
-          </button>
 
           {showProfile && (
             <div className="absolute top-full mt-2 end-0 w-80 max-w-[92vw] bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 text-gray-800 text-xs z-50 animate-in fade-in zoom-in-95 duration-100">
@@ -836,8 +843,9 @@ export const TopNav: React.FC<TopNavProps> = ({
                   <button
                     onClick={() => {
                       storage.setAdminMode(false);
-                      adminService.logoutAdmin?.();
-                      window.location.href = '/';
+                      const guest = storage.logoutUser();
+                      setUserProfile(guest);
+                      setShowProfile(false);
                     }}
                     className="w-full text-start px-2.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl font-bold flex items-center gap-2 cursor-pointer transition border border-red-200"
                   >

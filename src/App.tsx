@@ -38,6 +38,7 @@ import { SnnsEducationApp } from './components/apps/SnnsEducationApp';
 import { PwaInstallModal } from './components/common/PwaInstallModal';
 import { appRegistry } from './services/appRegistry';
 import { themeService } from './services/themeService';
+import { InternalMailBox } from './components/common/InternalMailBox';
 import { ShieldAlert, UserCheck, RefreshCw, ArrowLeft } from 'lucide-react';
 
 export default function App() {
@@ -54,6 +55,7 @@ export default function App() {
   const [lang, setLang] = useState<'en' | 'ar'>(storage.getLanguage());
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [showPwaModal, setShowPwaModal] = useState<boolean>(false);
+  const [showInternalMailModal, setShowInternalMailModal] = useState<boolean>(false);
   const [pwaModalInitialApp, setPwaModalInitialApp] = useState<AppId | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => storage.isDarkMode());
   const [activeRole, setActiveRole] = useState(() => appRegistry.getCurrentRole());
@@ -370,6 +372,7 @@ export default function App() {
           setPwaModalInitialApp(currentApp);
           setShowPwaModal(true);
         }}
+        onOpenInternalMail={() => setShowInternalMailModal(true)}
       />
 
       {/* Main View Area */}
@@ -655,6 +658,21 @@ export default function App() {
           handleSelectApp(appId);
         }}
       />
+
+      {/* Internal SNNS.PRO Mailbox Modal */}
+      {showInternalMailModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm p-3 sm:p-6 flex items-center justify-center animate-in fade-in">
+          <div className="max-w-4xl w-full">
+            <InternalMailBox
+              isModal
+              currentUserEmail={storage.getUserProfile().email}
+              currentUserName={storage.getUserProfile().name}
+              lang={lang}
+              onClose={() => setShowInternalMailModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

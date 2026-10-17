@@ -1054,24 +1054,68 @@ export const storage = {
       const data = localStorage.getItem('snns_user_profile');
       if (data) {
         const parsed: UserProfile = JSON.parse(data);
-        // Ensure email is always on PRIMARY_DOMAIN (snns.pro) without fake/old domains
-        if (
-          !parsed.email ||
-          parsed.email.includes('@snns.corp') ||
-          parsed.email.includes('@gmail.com') ||
-          !parsed.email.endsWith(`@${PRIMARY_DOMAIN}`)
-        ) {
-          parsed.email = generateSnnsEmail(parsed.name || parsed.username || 'htaf');
-          parsed.domain = PRIMARY_DOMAIN;
-          localStorage.setItem('snns_user_profile', JSON.stringify(parsed));
-        }
         return parsed;
       }
-      localStorage.setItem('snns_user_profile', JSON.stringify(DEFAULT_USER_PROFILE));
-      return DEFAULT_USER_PROFILE;
+      return {
+        id: 'guest',
+        name: 'زائر',
+        username: 'guest',
+        email: `guest@${PRIMARY_DOMAIN}`,
+        domain: PRIMARY_DOMAIN,
+        role: 'Guest Visitor',
+        roleAr: 'زائر المنظومة',
+        department: 'SNNS Cloud',
+        departmentAr: 'منظومة SNNS',
+        avatarInitials: '؟',
+        avatarColor: 'bg-zinc-700',
+        statusText: 'غير مسجل الدخول',
+        security: DEFAULT_SECURITY_SETTINGS,
+        isAuthenticated: false,
+      };
     } catch {
-      return DEFAULT_USER_PROFILE;
+      return {
+        id: 'guest',
+        name: 'زائر',
+        username: 'guest',
+        email: `guest@${PRIMARY_DOMAIN}`,
+        domain: PRIMARY_DOMAIN,
+        role: 'Guest Visitor',
+        roleAr: 'زائر المنظومة',
+        department: 'SNNS Cloud',
+        departmentAr: 'منظومة SNNS',
+        avatarInitials: '؟',
+        avatarColor: 'bg-zinc-700',
+        statusText: 'غير مسجل الدخول',
+        security: DEFAULT_SECURITY_SETTINGS,
+        isAuthenticated: false,
+      };
     }
+  },
+
+  logoutUser: (): UserProfile => {
+    const guestProfile: UserProfile = {
+      id: 'guest',
+      name: 'زائر',
+      username: 'guest',
+      email: `guest@${PRIMARY_DOMAIN}`,
+      domain: PRIMARY_DOMAIN,
+      role: 'Guest Visitor',
+      roleAr: 'زائر المنظومة',
+      department: 'SNNS Cloud',
+      departmentAr: 'منظومة SNNS',
+      avatarInitials: '؟',
+      avatarColor: 'bg-zinc-700',
+      statusText: 'غير مسجل الدخول',
+      security: DEFAULT_SECURITY_SETTINGS,
+      isAuthenticated: false,
+    };
+    localStorage.setItem('snns_user_profile', JSON.stringify(guestProfile));
+    try {
+      window.dispatchEvent(
+        new CustomEvent('snns_user_profile_updated', { detail: guestProfile })
+      );
+    } catch {}
+    return guestProfile;
   },
 
   saveUserProfile: (profileData: Partial<UserProfile>): UserProfile => {
@@ -1204,7 +1248,7 @@ export const storage = {
         department: profile.department!,
         departmentAr: profile.departmentAr!,
         avatarInitials: initials,
-        avatarColor: randomColor,
+        avatarColor: pickedColor,
         statusText: profile.statusText,
       };
       storage.saveDirectoryUsers([newDirUser, ...dir]);
