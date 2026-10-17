@@ -1,0 +1,7 @@
+{
+  "name": "SNNS 365 Cloud Suite",
+  "description": "Comprehensive cloud productivity suite featuring SNNS Word, Excel, PowerPoint, Outlook, Teams, OneDrive, Copilot AI, To Do, OneNote, Designer, Clipchamp, Calendar, Forms, Skype, and Family Safety.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

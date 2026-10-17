@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+:root {
+  --snns-bg: #0A0D0C;
+  --snns-bg-type: solid;
+  --snns-bg-gradient: linear-gradient(135deg, #0A0D0C 0%, #111A16 100%);
+  --snns-bg-image: none;
+
+  --snns-top-nav-bg: #090D0C;
+  --snns-top-nav-text: #ffffff;
+  --snns-top-nav-border: #1F2926;
+
+  --snns-sidebar-bg: #0E1513;
+  --snns-sidebar-text: #e2e8f0;
+  --snns-sidebar-border: #1e2925;
+
+  --snns-card-bg: #111816;
+  --snns-card-border: #23332D;
+  --snns-card-text: #f1f5f9;
+
+  --snns-primary-btn-bg: #059669;
+  --snns-primary-btn-hover: #10b981;
+  --snns-primary-btn-text: #ffffff;
+
+  --snns-text-main: #f8fafc;
+  --snns-text-muted: #94a3b8;
+  --snns-border: #23332D;
+  --snns-accent: #10b981;
+}
+
+/* Dynamic design token utilities */
+.snns-dynamic-bg {
+  background-color: var(--snns-bg);
+}
+
+.snns-dynamic-card {
+  background-color: var(--snns-card-bg);
+  border-color: var(--snns-card-border);
+  color: var(--snns-card-text);
+}
+
+.snns-dynamic-btn {
+  background-color: var(--snns-primary-btn-bg);
+  color: var(--snns-primary-btn-text);
+  transition: all 0.2s ease;
+}
+
+.snns-dynamic-btn:hover {
+  background-color: var(--snns-primary-btn-hover);
+}
+
+.snns-dynamic-border {
+  border-color: var(--snns-border);
+}
+
+.snns-dynamic-text {
+  color: var(--snns-text-main);
+}
+
+.snns-dynamic-text-muted {
+  color: var(--snns-text-muted);
+}
+
+/* Cross-browser scrollbar hiding utility (Chrome, Edge, Firefox, Safari) */
+.scrollbar-none {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera, Edge Chromium */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Smooth touch and wheel horizontal scroll physics */
+.snns-scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+}
+
+@layer utilities {
+  @media print {
+    /* Hide navigation bars, admin panels, floating modals and buttons */
+    nav,
+    header,
+    aside,
+    button,
+    .no-print,
+    [data-no-print="true"] {
+      display: none !important;
+    }
+
+    /* Reset background and typography for clean paper print */
+    body,
+    html,
+    #root {
+      background: #ffffff !important;
+      color: #000000 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: auto !important;
+      overflow: visible !important;
+      font-size: 12pt !important;
+    }
+
+    /* Printable containers */
+    .printable-content {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+      background: white !important;
+      color: black !important;
+    }
+
+    /* Prevent awkward element breaking inside tables, cards, slides */
+    tr,
+    img,
+    figure,
+    blockquote,
+    .print-avoid-break {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    /* Page break helpers */
+    .page-break {
+      page-break-after: always !important;
+      break-after: page !important;
+    }
+
+    /* Show links url in small print if needed */
+    a {
+      text-decoration: underline !important;
+      color: #000000 !important;
+    }
+  }
+}
+

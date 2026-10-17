@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "Site": {
+      "title": "Site",
+      "description": "An indexed website or link in SNNS.PRO database",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the site"
+        },
+        "url": {
+          "type": "string",
+          "description": "Full URL of the website"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the website",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "description": "Short summary or description of the website",
+          "maxLength": 1000
+        },
+        "category": {
+          "type": "string",
+          "description": "Category such as tech, news, tools, education, media, general",
+          "maxLength": 50
+        },
+        "tags": {
+          "type": "string",
+          "description": "Comma separated keywords or tags for search indexing",
+          "maxLength": 300
+        },
+        "favicon": {
+          "type": "string",
+          "description": "URL to website favicon or icon",
+          "maxLength": 500
+        },
+        "clicks": {
+          "type": "number",
+          "description": "Number of times this result was clicked"
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Whether the website has been verified"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of indexing"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["id", "url", "title", "description", "category", "createdAt"]
+    },
+    "SearchQuery": {
+      "title": "SearchQuery",
+      "description": "Popular or recent search query logged in the engine",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique query ID"
+        },
+        "query": {
+          "type": "string",
+          "description": "The search term",
+          "maxLength": 150
+        },
+        "count": {
+          "type": "number",
+          "description": "Number of times this query was executed"
+        },
+        "lastSearchedAt": {
+          "type": "string",
+          "description": "Timestamp of the last search"
+        }
+      },
+      "required": ["id", "query", "count"]
+    }
+  },
+  "firestore": {
+    "/sites/{siteId}": {
+      "schema": "Site",
+      "description": "Collection of all indexed websites and links"
+    },
+    "/queries/{queryId}": {
+      "schema": "SearchQuery",
+      "description": "Trending and autocomplete search query logs"
+    }
+  }
+}

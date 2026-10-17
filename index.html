@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SNNS 365 Cloud Suite</title>
+    <meta name="description" content="Comprehensive cloud productivity suite featuring SNNS Word, Excel, PowerPoint, Outlook, Teams, OneDrive, Copilot AI, To Do, OneNote, Designer, Clipchamp, Calendar, Forms, Skype, and Family Safety." />
+    <meta property="og:title" content="SNNS 365 Cloud Suite" />
+    <meta property="og:description" content="Comprehensive cloud productivity suite featuring SNNS Word, Excel, PowerPoint, Outlook, Teams, OneDrive, Copilot AI, To Do, OneNote, Designer, Clipchamp, Calendar, Forms, Skype, and Family Safety." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" id="manifest-link" href="/manifest.json" />
+    <meta name="theme-color" content="#064E3B" />
+  </head>
+  <body class="bg-[#0A0D0C] text-slate-100 antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

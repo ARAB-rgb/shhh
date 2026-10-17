@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "SNNS.PRO — المنظومة الرقمية السعودية الموحدة",
+  "short_name": "SNNS.PRO",
+  "description": "منظومة رقمية سحابية سعودية متكاملة تخدم الأفراد والشركات والمؤسسات والطلاب والتجار",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#064E3B",
+  "background_color": "#0A0D0C",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

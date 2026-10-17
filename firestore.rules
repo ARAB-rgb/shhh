@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Full-string match — only absolute http(s) URLs are ever accepted (blocks javascript:/data:/file:/vbscript:/etc).
+    function isHttpUrl(value) {
+      return value is string && value.matches('^https?://.+');
+    }
+
+    function isValidSite(data) {
+      return data.id is string && data.id.size() <= 128
+        && isHttpUrl(data.url) && data.url.size() <= 500
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.description is string && data.description.size() <= 1000
+        && data.category is string && data.category.size() <= 50
+        && (!('tags' in data) || (data.tags is string && data.tags.size() <= 300))
+        && (!('favicon' in data) || (
+              data.favicon is string && data.favicon.size() <= 500
+              && (data.favicon.size() == 0 || isHttpUrl(data.favicon))
+           ))
+        && (!('clicks' in data) || data.clicks is number)
+        && (!('isVerified' in data) || data.isVerified is bool)
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 50));
+    }
+
+    function isValidSearchQuery(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.query is string && data.query.size() > 0 && data.query.size() <= 150
+        && (!('count' in data) || data.count is number)
+        && (!('lastSearchedAt' in data) || (data.lastSearchedAt is string && data.lastSearchedAt.size() <= 50));
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Admin allow-list: presence of admins/{uid} grants admin rights. There is no client write
+    // path to this collection — admin docs can only be added/removed manually in the Firebase
+    // Console. This avoids inventing a Custom Claim that would require the Admin SDK.
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Public "Add a site" submissions must not self-certify verification or forge popularity.
+    function isSafePublicSiteSubmission(data) {
+      return (!('isVerified' in data) || data.isVerified == false)
+        && (!('clicks' in data) || (data.clicks is number && data.clicks >= 0 && data.clicks <= 1));
+    }
+
+    // Anonymous click-through counter: only clicks/updatedAt may change, and only by exactly +1 —
+    // preserves the real visit counter for non-admin users without allowing forged popularity.
+    function isSingleClickIncrement() {
+      return incoming().diff(existing()).affectedKeys().hasOnly(['clicks', 'updatedAt'])
+        && incoming().clicks is number && existing().clicks is number
+        && incoming().clicks == existing().clicks + 1;
+    }
+
+    match /admins/{uid} {
+      // A signed-in user may check only their own admin status; the full admin list is never readable.
+      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow list: if false;
+      allow write: if false;
+    }
+
+    // Collection of indexed websites and links
+    match /sites/{siteId} {
+      allow read: if true;
+
+      allow create: if isValidId(siteId) && isValidSite(incoming())
+        && (isAdmin() || isSafePublicSiteSubmission(incoming()));
+
+      allow update: if isValidId(siteId) && isValidSite(incoming())
+        && (isAdmin() || isSingleClickIncrement());
+
+      allow delete: if isAdmin();
+    }
+
+    // Collection of search queries and trending terms
+    match /queries/{queryId} {
+      allow read: if true;
+
+      allow create: if isValidId(queryId) && isValidSearchQuery(incoming())
+        && (!('count' in incoming()) || incoming().count <= 1);
+
+      allow update: if isValidId(queryId) && isValidSearchQuery(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['count', 'lastSearchedAt'])
+        && (!('count' in incoming()) || incoming().count == existing().count + 1)
+      );
+
+      allow delete: if false;
+    }
+  }
+}
+

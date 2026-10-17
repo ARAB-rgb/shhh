@@ -1,0 +1,26 @@
+{
+  "id": "/?app=snns-education",
+  "name": "SNNS Education — المنصة الأكاديمية والتعليمية",
+  "short_name": "SNNS Edu",
+  "description": "منصة التعليم الرقمي للجامعات والمقررات والقاعات الافتراضية والشهادات",
+  "start_url": "/?app=snns-education",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#065F46",
+  "background_color": "#0F172A",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
