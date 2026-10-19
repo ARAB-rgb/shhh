@@ -36,6 +36,7 @@ import { storage, PRIMARY_DOMAIN, generateSnnsEmail } from '../../services/stora
 import { adminService } from '../../services/adminService';
 import { UserLoginModal } from '../common/UserLoginModal';
 import { MultiTenantSwitcher } from '../common/MultiTenantSwitcher';
+import { AppsDropdownMenu } from './AppsDropdownMenu';
 import {
   WordIcon,
   ExcelIcon,
@@ -364,21 +365,12 @@ export const TopNav: React.FC<TopNavProps> = ({
         </div>
       </div>
 
-      {/* End controls: Tenant Switcher, PWA, Dark Mode, Language, Profile */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        {/* Multi-Tenant Entity Switcher */}
-        <MultiTenantSwitcher lang={lang} />
-
-        {/* PWA Standalone Install Button */}
-        {onOpenPwaModal && (
-          <button
-            onClick={onOpenPwaModal}
-            className="p-2 hover:bg-white/10 rounded-xl transition text-emerald-400 hover:text-emerald-300 cursor-pointer"
-            title={isAr ? 'تثبيت المنظمة أو التطبيقات المستقلة (PWA)' : 'Install Standalone Apps (PWA)'}
-          >
-            <Smartphone className="w-4 h-4" />
-          </button>
-        )}
+      {/* End controls: Decluttered, Elegant & Professional */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Multi-Tenant Entity Switcher (Desktop) */}
+        <div className="hidden xl:block">
+          <MultiTenantSwitcher lang={lang} />
+        </div>
 
         {/* Dark / Light Mode Switcher */}
         {onToggleDarkMode && (
@@ -390,151 +382,11 @@ export const TopNav: React.FC<TopNavProps> = ({
             {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
         )}
-        {/* Quick Create Button */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              const next = !showCreateMenu;
-              closeAllMenus();
-              setShowCreateMenu(next);
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white/15 hover:bg-white/25 rounded text-xs font-medium text-white transition"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{isAr ? 'جديد' : 'New'}</span>
-            <ChevronDown className="w-3 h-3 opacity-70" />
-          </button>
-
-          {showCreateMenu && (
-            <div className="absolute top-full mt-2 end-0 w-52 bg-white rounded-xl shadow-2xl border border-gray-200 py-1.5 text-gray-800 text-xs z-50 animate-in fade-in zoom-in-95 duration-100">
-              <button
-                onClick={() => {
-                  onSelectApp('snns-ai');
-                  setShowCreateMenu(false);
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-cyan-50 transition border-b border-gray-100"
-              >
-                <SnnsAiIcon className="w-4 h-4 shrink-0" />
-                <span className="font-bold text-cyan-700">{isAr ? 'مستند ذكي بـ SNNS AI' : 'Smart AI Workspace'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('word');
-                  setShowCreateMenu(false);
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-gray-100 transition"
-              >
-                <WordIcon className="w-4 h-4 shrink-0" />
-                <span>{isAr ? 'مستند Word جديد' : 'Word Document'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('excel');
-                  setShowCreateMenu(false);
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-gray-100 transition"
-              >
-                <ExcelIcon className="w-4 h-4 shrink-0" />
-                <span>{isAr ? 'مصنف Excel جديد' : 'Excel Workbook'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('powerpoint');
-                  setShowCreateMenu(false);
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-gray-100 transition"
-              >
-                <PowerPointIcon className="w-4 h-4 shrink-0" />
-                <span>{isAr ? 'عرض تقديمي جديد' : 'PowerPoint Presentation'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('forms');
-                  setShowCreateMenu(false);
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-gray-100 transition"
-              >
-                <FormsSurveyIcon className="w-4 h-4 shrink-0" />
-                <span>{isAr ? 'استبيان جديد (Survey)' : 'Forms Survey'}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowCreateMenu(false);
-                  onSelectApp('qayd-pos');
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-emerald-50 text-emerald-800 transition border-t border-gray-100 font-semibold"
-              >
-                <QaydPosIcon className="w-4 h-4 shrink-0" />
-                <span>{isAr ? 'فاتورة كاشير وبيع (QAYD POS)' : 'New Cashier Sale (POS)'}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowCreateMenu(false);
-                  onSelectApp('qayd-accounting');
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-blue-50 text-blue-800 transition border-t border-gray-100 font-semibold"
-              >
-                <QaydAccountingIcon className="w-4 h-4 shrink-0" />
-                <span>{isAr ? 'قيد محاسبي جديد (QAYD)' : 'New Journal Entry'}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowCreateMenu(false);
-                  onSelectApp('printer');
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-sky-50 text-sky-800 transition border-t border-gray-100 font-semibold"
-              >
-                <PrinterAppIcon className="w-4 h-4 shrink-0" />
-                <span>{isAr ? 'طابعة واي فاي الذكية والربط اللاسلكي' : 'SNNS Smart Wi-Fi Printer'}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowCreateMenu(false);
-                  onSelectApp('clipchamp');
-                }}
-                className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-purple-50 text-purple-800 transition border-t border-gray-100 font-semibold"
-              >
-                <ClipchampIcon className="w-4 h-4 shrink-0" />
-                <span>{isAr ? 'أداة تحميل وتعديل الفيديو (Video Studio)' : 'Video Studio & Downloader'}</span>
-              </button>
-
-              {onTriggerPrint && (
-                <button
-                  onClick={() => {
-                    setShowCreateMenu(false);
-                    onTriggerPrint();
-                  }}
-                  className="w-full px-3 py-2 text-start flex items-center gap-2.5 hover:bg-blue-50 text-blue-700 transition font-medium"
-                >
-                  <Printer className="w-4 h-4 shrink-0 text-blue-600" />
-                  <span>{isAr ? 'طباعة سريعة (Ctrl+P)' : 'Quick Print (Ctrl+P)'}</span>
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Copilot shortcut */}
-        <button
-          onClick={() => {
-            closeAllMenus();
-            onSelectApp('copilot');
-          }}
-          className="p-1.5 hover:bg-white/15 rounded transition flex items-center gap-1 text-xs text-white"
-          title="SNNS Copilot AI"
-        >
-          <Sparkles className="w-4 h-4 text-amber-200 animate-pulse" />
-          <span className="hidden md:inline font-semibold">Copilot</span>
-        </button>
 
         {/* Language switch */}
         <button
           onClick={onToggleLang}
-          className="p-2 hover:bg-white/15 rounded transition text-xs font-semibold"
+          className="px-2.5 py-1 hover:bg-white/10 rounded-xl transition text-xs font-bold text-white cursor-pointer border border-white/15"
           title={isAr ? 'Switch to English' : 'التحويل إلى العربية'}
         >
           {isAr ? 'EN' : 'عربي'}
@@ -550,7 +402,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               onSelectApp('outlook');
             }
           }}
-          className="p-2 hover:bg-white/15 rounded-xl transition relative text-white cursor-pointer"
+          className="p-2 hover:bg-white/10 rounded-xl transition relative text-white cursor-pointer"
           title={isAr ? 'بريد SNNS الداخلي (@snns.pro)' : 'SNNS Internal Mailbox'}
         >
           <Mail className="w-4 h-4 text-emerald-300 hover:text-emerald-200" />
@@ -559,99 +411,6 @@ export const TopNav: React.FC<TopNavProps> = ({
               {unreadMailCount}
             </span>
           )}
-        </button>
-
-        {/* Notifications */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              const next = !showNotifications;
-              closeAllMenus();
-              setShowNotifications(next);
-            }}
-            className="p-2 hover:bg-white/15 rounded transition relative text-white"
-            title={isAr ? 'الإشعارات' : 'Notifications'}
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full"></span>
-          </button>
-
-          {showNotifications && (
-            <div className="absolute top-full mt-2 end-0 w-72 sm:w-80 bg-white rounded-xl shadow-2xl border border-gray-200 p-3 text-gray-800 text-xs z-50 animate-in fade-in zoom-in-95 duration-100">
-              <div className="flex items-center justify-between pb-2 border-b font-semibold">
-                <span>{isAr ? 'إشعارات SNNS 365' : 'SNNS 365 Notifications'}</span>
-                <span className="text-sky-600 text-[11px] font-normal cursor-pointer">
-                  {isAr ? 'تعيين كمقروء' : 'Mark all read'}
-                </span>
-              </div>
-              <div className="divide-y divide-gray-100 mt-1 max-h-60 overflow-y-auto">
-                <div className="py-2 flex items-start gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-600 mt-1 shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {isAr ? 'تمت مزامنة المستند بنجاح' : 'Document synced to SNNS OneDrive'}
-                    </p>
-                    <p className="text-gray-500 text-[11px]">
-                      {isAr ? 'قبل 5 دقائق بواسطة سارة' : '5 mins ago by Sarah'}
-                    </p>
-                  </div>
-                </div>
-                <div className="py-2 flex items-start gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1 shrink-0" />
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {isAr ? 'مهمة مستحقة اليوم في SNNS To Do' : 'Task due today in SNNS To Do'}
-                    </p>
-                    <p className="text-gray-500 text-[11px]">
-                      {isAr ? 'مراجعة الميزانية المالية' : 'Review Q4 Financial Model'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Admin controls removed from public view for clean & decluttered user UI */}
-
-        {/* Video Studio & Downloader Button */}
-        <button
-          onClick={() => {
-            closeAllMenus();
-            onSelectApp('clipchamp');
-          }}
-          className="p-2 hover:bg-white/15 rounded transition text-white flex items-center gap-1 cursor-pointer"
-          title={isAr ? 'أدوات تعديل وتحميل الفيديو (Clipchamp)' : 'Video Studio & Downloader'}
-        >
-          <Video className="w-4 h-4 text-purple-200" />
-        </button>
-
-        {/* Printer Button */}
-        <button
-          onClick={() => {
-            closeAllMenus();
-            if (currentApp && currentApp !== 'printer' && onTriggerPrint) {
-              onTriggerPrint();
-            } else {
-              onSelectApp('printer');
-            }
-          }}
-          className="p-2 hover:bg-white/15 rounded transition text-white flex items-center gap-1 cursor-pointer"
-          title={isAr ? 'طابعة واي فاي الذكية والربط اللاسلكي (Ctrl+P)' : 'SNNS Wi-Fi Smart Printer (Ctrl+P)'}
-        >
-          <Printer className="w-4 h-4 text-sky-200" />
-        </button>
-
-        {/* Settings */}
-        <button
-          onClick={() => {
-            closeAllMenus();
-            setShowSettings(!showSettings);
-          }}
-          className="p-2 hover:bg-white/15 rounded transition text-white"
-          title={isAr ? 'إعدادات المنظومة' : 'Settings'}
-        >
-          <Settings className="w-4 h-4" />
         </button>
 
         {/* Unified Dynamic User Avatar & Account Button */}
@@ -887,236 +646,18 @@ export const TopNav: React.FC<TopNavProps> = ({
         </div>
       </div>
 
-      {/* Waffle Dropdown Menu */}
-      {showWaffle && (
-        <div
-          className="fixed inset-0 bg-black/30 z-40"
-          onClick={() => setShowWaffle(false)}
-        >
-          <div
-            className="absolute top-12 start-0 w-80 max-w-[95vw] bg-white text-gray-800 shadow-2xl border-r border-b border-gray-200 p-4 rounded-be-2xl max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b mb-3">
-              <span className="font-bold text-sm text-gray-900 flex items-center gap-2">
-                <span className="bg-[#0078D4] text-white text-[10px] px-1.5 py-0.5 rounded font-black">
-                  SNNS
-                </span>
-                {isAr ? 'تطبيقات SNNS 365' : 'All SNNS Apps'}
-              </span>
-              <button
-                onClick={() => setShowWaffle(false)}
-                className="text-gray-400 hover:text-gray-700 p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <button
-                onClick={() => {
-                  onSelectApp('snns-ai');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-cyan-50 rounded-xl flex flex-col items-center gap-1 transition group col-span-3 bg-gradient-to-r from-slate-900 to-indigo-950 text-white shadow-md border border-white/10"
-              >
-                <div className="flex items-center gap-2">
-                  <SnnsAiIcon className="w-8 h-8" />
-                  <div className="text-start">
-                    <span className="text-xs font-black text-cyan-300 block">SNNS AI</span>
-                    <span className="text-[10px] text-gray-300 block">
-                      {isAr ? 'منظومة الذكاء الاصطناعي الشاملة' : 'All-in-one AI Services'}
-                    </span>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  onSelectApp('qayd-pos');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-emerald-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <QaydPosIcon className="w-8 h-8" />
-                <span className="text-xs font-bold text-emerald-800">QAYD POS</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('qayd-accounting');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-blue-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <QaydAccountingIcon className="w-8 h-8" />
-                <span className="text-xs font-bold text-blue-900">QAYD Ledger</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('snns-calls');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-sky-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <CallsIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">SNNS Calls</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('snns-chat');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-indigo-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <ChatIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">SNNS Chat</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('snns-education');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-emerald-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <EducationIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">{isAr ? 'التعليم' : 'Education'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('word');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-blue-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <WordIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">SNNS Docs</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('excel');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-green-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <ExcelIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">SNNS Sheets</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('powerpoint');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-orange-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <PowerPointIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">{isAr ? 'عروض SNNS' : 'Presentations'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('marketplace');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-amber-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <MarketplaceIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">{isAr ? 'سوق SNNS' : 'Marketplace'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('business');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-indigo-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <BusinessIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">{isAr ? 'دليل الأعمال' : 'Business'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('account');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-sky-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <AccountIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">{isAr ? 'حسابي الموحد' : 'Account'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('teams');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-indigo-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <TeamsIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">SNNS Connect</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('outlook');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-sky-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <OutlookIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">SNNS Mail</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('onedrive');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-sky-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <OneDriveIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">SNNS Cloud</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('printer');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-sky-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <PrinterAppIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">{isAr ? 'مركز الطباعة' : 'Print Hub'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('clipchamp');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-purple-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <ClipchampIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">{isAr ? 'استوديو الفيديو' : 'Media Studio'}</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectApp('copilot');
-                  setShowWaffle(false);
-                }}
-                className="p-2 hover:bg-purple-50 rounded-lg flex flex-col items-center gap-1 transition"
-              >
-                <CopilotIcon className="w-8 h-8" />
-                <span className="text-xs font-medium text-gray-700">Copilot AI</span>
-              </button>
-            </div>
-
-            <div className="mt-4 pt-3 border-t">
-              <button
-                onClick={() => {
-                  onSelectApp(null);
-                  setShowWaffle(false);
-                }}
-                className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-md transition text-center"
-              >
-                {isAr ? 'عرض لوحة جميع التطبيقات (Hub)' : 'Open All Apps Hub'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 9-Squares Apps Dropdown Menu (Categorized, Searchable, Responsive, Escape & Outside-click) */}
+      <AppsDropdownMenu
+        isOpen={showWaffle}
+        onClose={() => setShowWaffle(false)}
+        onSelectApp={onSelectApp}
+        lang={lang}
+        currentApp={currentApp}
+        onOpenPwaModal={onOpenPwaModal}
+        onOpenInternalMail={onOpenInternalMail}
+        onNavigateToSts={onNavigateToSts}
+        isServerAdminVerified={isServerAdminVerified}
+      />
 
       {/* Settings Modal */}
       {showSettings && (

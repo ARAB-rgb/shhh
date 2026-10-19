@@ -39,6 +39,8 @@ export const SaudiSearchHero: React.FC<SaudiSearchHeroProps> = ({
   const [newSiteTitle, setNewSiteTitle] = useState('');
   const [newSiteUrl, setNewSiteUrl] = useState('');
   const [addNotice, setAddNotice] = useState<string | null>(null);
+  const [siteError, setSiteError] = useState<string | null>(null);
+  const [isSubmittingSite, setIsSubmittingSite] = useState(false);
 
   useEffect(() => {
     const handleBgUpdate = (e: any) => {
@@ -68,20 +70,51 @@ export const SaudiSearchHero: React.FC<SaudiSearchHeroProps> = ({
     onSelectApp(randomApp);
   };
 
-  const handleAddSiteSubmit = (e: React.FormEvent) => {
+  const handleAddSiteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSiteTitle.trim() || !newSiteUrl.trim()) return;
-    setAddNotice(
-      isAr
-        ? `تم إرسال الموقع "${newSiteTitle}" بنجاح إلى قائمة المراجعة لفهرس SNNS.PRO المركزي.`
-        : 'Site submitted for index verification.'
-    );
-    setTimeout(() => {
-      setAddNotice(null);
-      setShowAddSiteModal(false);
-      setNewSiteTitle('');
-      setNewSiteUrl('');
-    }, 2500);
+
+    setIsSubmittingSite(true);
+    setSiteError(null);
+    setAddNotice(null);
+
+    try {
+      const res = await fetch('/api/directory/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newSiteTitle.trim(),
+          requestedUrl: newSiteUrl.trim(),
+          category: isAr ? 'دوائر وخدمات سحابية' : 'Cloud Services & Portals',
+          notes: 'طلب فهرسة تم تقديمه من الواجهة الرئيسية لـ SNNS.PRO',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || (isAr ? 'تعذر إرسال الطلب إلى الخادم' : 'Failed to submit request to server'));
+      }
+
+      // Only display success after actual server confirmation
+      setAddNotice(
+        data.message ||
+          (isAr
+            ? `تم تأكيد استلام الخادم للطلب وإدراجه بقائمة التدقيق: ${newSiteTitle}`
+            : `Request successfully confirmed by server: ${newSiteTitle}`)
+      );
+
+      setTimeout(() => {
+        setAddNotice(null);
+        setShowAddSiteModal(false);
+        setNewSiteTitle('');
+        setNewSiteUrl('');
+      }, 2500);
+    } catch (err: any) {
+      setSiteError(err.message || (isAr ? 'حدث خطأ في الاتصال بالخادم، يرجى المحاولة لاحقاً' : 'Network error with server'));
+    } finally {
+      setIsSubmittingSite(false);
+    }
   };
 
   return (
@@ -242,19 +275,34 @@ export const SaudiSearchHero: React.FC<SaudiSearchHeroProps> = ({
                   />
                 </div>
 
+                {siteError && (
+                  <div className="p-3 bg-red-500/20 border border-red-500/40 text-red-300 rounded-xl text-xs font-semibold">
+                    {siteError}
+                  </div>
+                )}
+
                 <div className="pt-3 flex justify-end gap-2">
                   <button
                     type="button"
+                    disabled={isSubmittingSite}
                     onClick={() => setShowAddSiteModal(false)}
-                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-medium"
+                    className="px-4 py-2 bg-slate-800 text-slate-300 hover:text-white rounded-xl font-medium transition cursor-pointer"
                   >
                     {isAr ? 'إلغاء' : 'Cancel'}
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition shadow-md"
+                    disabled={isSubmittingSite}
+                    className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white rounded-xl font-bold transition shadow-md flex items-center gap-2 cursor-pointer"
                   >
-                    {isAr ? 'إرسال للفهرسة' : 'Submit for Indexing'}
+                    {isSubmittingSite ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>{isAr ? 'جاري الإرسال...' : 'Submitting...'}</span>
+                      </>
+                    ) : (
+                      <span>{isAr ? 'إرسال للفهرسة' : 'Submit for Indexing'}</span>
+                    )}
                   </button>
                 </div>
               </form>

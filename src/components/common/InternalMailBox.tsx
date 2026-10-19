@@ -18,8 +18,12 @@ import {
   ChevronRight,
   ShieldCheck,
   Search,
+  Server,
+  Wifi,
+  ShieldAlert,
 } from 'lucide-react';
 import { storage } from '../../services/storage';
+import { realMailService, VpsMailStatus } from '../../services/realMailService';
 
 export interface InternalMessage {
   id: string;
@@ -74,6 +78,36 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
   const [sentMessages, setSentMessages] = useState<InternalMessage[]>([]);
   const [activeTab, setActiveTab] = useState<'inbox' | 'sent' | 'compose'>('inbox');
   const [selectedMessage, setSelectedMessage] = useState<InternalMessage | null>(null);
+
+  // VPS Postfix/Dovecot Real Server Status (/api/mail/status)
+  const [vpsStatus, setVpsStatus] = useState<VpsMailStatus | null>(null);
+  const [isCheckingVps, setIsCheckingVps] = useState(false);
+
+  const checkVpsStatus = useCallback(async () => {
+    setIsCheckingVps(true);
+    try {
+      const status = await realMailService.checkMailStatus();
+      setVpsStatus(status);
+    } catch (err: any) {
+      setVpsStatus({
+        connected: false,
+        statusCode: 0,
+        statusText: 'CLIENT_ERROR',
+        error: isAr ? 'تعذر استدعاء فحص حالة الخادم' : 'Failed to call status endpoint',
+        details: err?.message || String(err),
+        domain: 'snns.pro',
+        userEmail: safeSenderEmail,
+        isAuthenticated: false,
+        serverType: 'Postfix + Dovecot (VPS)',
+      });
+    } finally {
+      setIsCheckingVps(false);
+    }
+  }, [safeSenderEmail, isAr]);
+
+  useEffect(() => {
+    checkVpsStatus();
+  }, [checkVpsStatus]);
 
   // Compose State
   const [recipient, setRecipient] = useState('');
@@ -198,9 +232,15 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
 
     setIsSending(true);
     try {
+      const token = await realMailService.getFirebaseIdToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch('/api/internal-mail/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           sender: safeSenderEmail,
           senderName: safeSenderName,
@@ -210,13 +250,14 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok && data.success) {
         showNotification(
           'success',
-          isAr
+          data.message || (isAr
             ? `تم إرسال الرسالة بنجاح إلى ${formattedRecipient}! ✉️`
-            : `Message sent to ${formattedRecipient} successfully!`
+            : `Message sent to ${formattedRecipient} successfully!`)
         );
         setRecipient('');
         setSubject('');
@@ -224,10 +265,13 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
         setActiveTab('inbox');
         refreshAll();
       } else {
-        showNotification('error', data.error || (isAr ? 'فشل إرسال الرسالة' : 'Failed to send message'));
+        showNotification(
+          'error',
+          data.error || data.message || (isAr ? `فشل إرسال الرسالة من الخادم (${res.status})` : `Failed to send message (${res.status})`)
+        );
       }
-    } catch {
-      showNotification('error', isAr ? 'حدث خطأ في الاتصال بالخادم' : 'Server connection error');
+    } catch (err: any) {
+      showNotification('error', isAr ? `حدث خطأ في الاتصال بالخادم: ${err?.message || ''}` : `Server connection error: ${err?.message || ''}`);
     } finally {
       setIsSending(false);
     }
@@ -365,6 +409,53 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
           <span>{notification.text}</span>
         </div>
       )}
+
+      {/* Real VPS Postfix/Dovecot Server Status Panel (/api/mail/status) */}
+      <div className="bg-slate-950/90 px-4 py-2 border-b border-slate-800/90 text-xs flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Server className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span className="font-semibold text-slate-300">
+            {isAr ? 'حالة خادم البريد الحي (Postfix/Dovecot على api.snns.pro):' : 'VPS Mail Server (api.snns.pro):'}
+          </span>
+          {vpsStatus ? (
+            vpsStatus.statusCode === 200 ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[11px] font-bold border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>200 متصل ونشط ({vpsStatus.mailboxStats?.unreadCount ?? 0} غير مقروء)</span>
+              </span>
+            ) : vpsStatus.statusCode === 401 ? (
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 font-mono text-[11px] font-bold border border-amber-500/30"
+                title={vpsStatus.details || vpsStatus.error}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span>401 محمي بالمصادقة (جاهز لتسليم ترويسة Firebase ID Token)</span>
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono text-[11px] font-bold border border-rose-500/30"
+                title={vpsStatus.details || vpsStatus.error}
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>{vpsStatus.statusCode ? `كود ${vpsStatus.statusCode}` : 'خطأ اتصال'}: {vpsStatus.error || 'فشل الاستجابة'}</span>
+              </span>
+            )
+          ) : (
+            <span className="text-slate-400 text-[11px] animate-pulse">
+              {isAr ? 'جارِ فحص مسار /api/mail/status...' : 'Checking /api/mail/status...'}
+            </span>
+          )}
+        </div>
+
+        <button
+          onClick={checkVpsStatus}
+          disabled={isCheckingVps}
+          className="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold inline-flex items-center gap-1 cursor-pointer bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 hover:border-slate-700 transition"
+        >
+          <RefreshCw className={`w-3 h-3 ${isCheckingVps ? 'animate-spin' : ''}`} />
+          <span>{isAr ? 'فحص الخادم الفعلي' : 'Check Status'}</span>
+        </button>
+      </div>
 
       {/* Tabs Bar */}
       <div className="bg-slate-950/70 px-4 py-2 border-b border-slate-800 flex items-center justify-between gap-2 overflow-x-auto">

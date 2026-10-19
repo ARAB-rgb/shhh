@@ -148,22 +148,37 @@ export const RoyalLeadershipBanner: React.FC<RoyalLeadershipBannerProps> = ({
   };
 
   return (
-    <div className={`flex justify-center items-center my-1 w-full px-2 ${className}`} dir={isAr ? 'rtl' : 'ltr'}>
-      {/* Compact Luxury Ribbon Container */}
-      <div className="relative w-full max-w-2xl bg-slate-950/85 backdrop-blur-md border border-slate-800 rounded-2xl p-2 sm:p-2.5 shadow-xl flex items-center justify-between gap-3 group">
+    <div className={`flex justify-center items-center my-2 w-full px-2 ${className}`} dir={isAr ? 'rtl' : 'ltr'}>
+      {/* Luxury Royal Container with No Overlap */}
+      <div className="relative w-full max-w-2xl bg-slate-950/90 backdrop-blur-md border border-amber-500/30 rounded-3xl p-3 sm:p-4 shadow-2xl flex flex-col gap-3 group overflow-hidden">
         
-        {/* Ambient Glow */}
-        <div className="absolute top-0 start-1/2 -translate-x-1/2 w-1/2 h-10 bg-emerald-500/10 blur-xl pointer-events-none" />
+        {/* Ambient Top Glow */}
+        <div className="absolute top-0 start-1/2 -translate-x-1/2 w-3/4 h-12 bg-gradient-to-r from-amber-500/10 via-emerald-500/15 to-amber-500/10 blur-xl pointer-events-none" />
 
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-bold text-white text-[11px] tracking-tight">
-            {isAr ? 'المملكة العربية السعودية • KSA 2030' : 'Kingdom of Saudi Arabia • KSA 2030'}
-          </span>
+        {/* Top Status Ribbon */}
+        <div className="relative z-10 flex items-center justify-between pb-2 border-b border-slate-800/80">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+            <span className="font-bold text-white text-xs tracking-tight">
+              {isAr ? 'المملكة العربية السعودية • رؤية 2030' : 'Kingdom of Saudi Arabia • Vision 2030'}
+            </span>
+            <span className="hidden sm:inline-block text-[10px] text-amber-400/80 font-mono bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+              {isAr ? 'القيادة الرشيدة' : 'Royal Leadership'}
+            </span>
+          </div>
+
+          <button
+            onClick={handleResetAll}
+            className="flex items-center gap-1 px-2 py-1 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-amber-400 rounded-lg transition text-[10px] shrink-0 cursor-pointer"
+            title={isAr ? 'استعادة الصور الافتراضية' : 'Reset to default images'}
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span className="hidden sm:inline">{isAr ? 'استعادة' : 'Reset'}</span>
+          </button>
         </div>
 
-        {/* Three Royal Frames Row: Right (King Salman) - Center (Saudi Flag) - Left (Crown Prince) */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 items-center justify-items-center">
+        {/* Three Symmetrical Royal Frames (Zero Overlap Grid) */}
+        <div className="relative z-10 grid grid-cols-3 gap-2 sm:gap-4 items-start">
           {slotsConfig.map((slot) => {
             const currentSrc = images[slot.id];
             const isCenter = slot.id === 'center';
@@ -172,13 +187,28 @@ export const RoyalLeadershipBanner: React.FC<RoyalLeadershipBannerProps> = ({
             return (
               <div
                 key={slot.id}
-                className="flex items-center gap-2 text-start cursor-pointer group/item relative"
                 onClick={() => setActiveEditingSlot(slot.id)}
-                title={isAr ? `انقر لتغيير ${slot.titleAr}` : `Click to change ${slot.titleEn}`}
+                className={`flex flex-col items-center text-center cursor-pointer p-2 rounded-2xl transition duration-200 group/slot ${
+                  isCenter
+                    ? 'bg-emerald-950/20 border border-emerald-500/20 hover:border-emerald-400/50'
+                    : 'hover:bg-slate-900/60 border border-transparent hover:border-amber-500/20'
+                }`}
+                title={isAr ? `انقر لتعديل صورة: ${slot.titleAr}` : `Click to change: ${slot.titleEn}`}
               >
-                <div className="relative">
-                  <div className={`absolute -inset-1 rounded-full ${isCenter ? 'bg-emerald-400/60' : 'bg-amber-400/60'} blur-[2px] opacity-70 group-hover/item:opacity-100 transition animate-pulse`} />
-                  <div className={`relative w-11 h-11 sm:w-14 sm:h-14 rounded-full border-2 ${isCenter ? 'border-emerald-400 p-0.5' : 'border-amber-400 p-0.5'} bg-slate-900 overflow-hidden flex items-center justify-center shadow-lg transition-transform group-hover/item:scale-105`}>
+                {/* Circular Portrait Frame */}
+                <div className="relative mb-2 shrink-0">
+                  <div
+                    className={`absolute -inset-1 rounded-full ${
+                      isCenter ? 'bg-emerald-400/40' : 'bg-amber-400/40'
+                    } blur-[3px] opacity-70 group-hover/slot:opacity-100 transition`}
+                  />
+                  <div
+                    className={`relative rounded-full overflow-hidden flex items-center justify-center shadow-lg transition-transform duration-300 group-hover/slot:scale-105 ${
+                      isCenter
+                        ? 'w-14 h-14 sm:w-16 sm:h-16 border-2 border-emerald-400 p-0.5 bg-slate-900'
+                        : 'w-12 h-12 sm:w-14 sm:h-14 border-2 border-amber-400 p-0.5 bg-slate-900'
+                    }`}
+                  >
                     {!hasError ? (
                       <img
                         src={currentSrc}
@@ -187,31 +217,38 @@ export const RoyalLeadershipBanner: React.FC<RoyalLeadershipBannerProps> = ({
                         onError={() => setErrorStates((prev) => ({ ...prev, [slot.id]: true }))}
                       />
                     ) : (
-                      <RoyalCrownEmblemSvg className="w-8 h-8" />
+                      <RoyalCrownEmblemSvg className={isCenter ? 'w-10 h-10' : 'w-8 h-8'} />
                     )}
                   </div>
-                  {/* Edit Badge overlay */}
-                  <div className="absolute -bottom-1 -end-1 bg-slate-900/90 border border-amber-400/80 rounded-full p-0.5 opacity-0 group-hover/item:opacity-100 transition shadow">
+
+                  {/* Edit Pencil Tooltip Badge */}
+                  <div className="absolute -bottom-1 -end-1 bg-slate-900 border border-amber-400/80 rounded-full p-1 opacity-0 group-hover/slot:opacity-100 transition shadow">
                     <Edit3 className="w-2.5 h-2.5 text-amber-300" />
                   </div>
                 </div>
 
-                <div className="hidden md:block">
-                  <p className="text-[11px] font-bold text-white leading-tight truncate max-w-[110px]">{slot.titleAr}</p>
-                  <p className={`text-[9px] ${isCenter ? 'text-emerald-400 font-bold' : 'text-amber-400 font-medium'} leading-tight`}>{slot.badge}</p>
+                {/* Slogan and Labels Underneath Portrait (Guaranteed No Overlap) */}
+                <div className="w-full flex flex-col items-center">
+                  <p className="text-[11px] sm:text-xs font-bold text-white leading-snug line-clamp-1 w-full px-1">
+                    {slot.titleAr}
+                  </p>
+                  <p className="text-[10px] text-slate-300 font-medium leading-tight line-clamp-1 w-full mt-0.5 hidden xs:block">
+                    {slot.subtitleAr}
+                  </p>
+                  <span
+                    className={`mt-1 inline-block text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                      isCenter
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}
+                  >
+                    {slot.badge}
+                  </span>
                 </div>
               </div>
             );
           })}
         </div>
-
-        <button
-          onClick={handleResetAll}
-          className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded-lg transition text-[10px] shrink-0"
-          title={isAr ? 'استعادة الصور الافتراضية' : 'Reset to default images'}
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
       </div>
 
       {/* Edit Modal */}

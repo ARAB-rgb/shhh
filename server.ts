@@ -1537,6 +1537,57 @@ const internalMessagesDB: InternalMessage[] = [
   },
 ];
 
+// ==========================================
+// VPS REAL MAIL PROXY ROUTER (/api/mail/*)
+// Forwards requests to https://api.snns.pro (Postfix + Dovecot Node API)
+// Passes Authorization Bearer Firebase ID Token directly to VPS
+// Returns authentic server responses & real HTTP status codes
+// ==========================================
+const VPS_MAIL_API_BASE = process.env.VPS_MAIL_API_URL || 'https://api.snns.pro';
+
+app.all('/api/mail/*', async (req, res) => {
+  const targetUrl = `${VPS_MAIL_API_BASE}${req.originalUrl}`;
+
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': (req.headers['content-type'] as string) || 'application/json',
+      'Accept': 'application/json, text/plain, */*',
+    };
+
+    if (req.headers.authorization) {
+      headers['Authorization'] = req.headers.authorization as string;
+    }
+
+    const fetchOptions: RequestInit = {
+      method: req.method,
+      headers,
+    };
+
+    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body && Object.keys(req.body).length > 0) {
+      fetchOptions.body = JSON.stringify(req.body);
+    }
+
+    const vpsRes = await fetch(targetUrl, fetchOptions);
+    const contentType = vpsRes.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const data = await vpsRes.json();
+      return res.status(vpsRes.status).json(data);
+    } else {
+      const text = await vpsRes.text();
+      return res.status(vpsRes.status).send(text);
+    }
+  } catch (err: any) {
+    console.error(`VPS Mail Proxy Error (${targetUrl}):`, err?.message || err);
+    return res.status(502).json({
+      error: 'VPS_GATEWAY_ERROR',
+      message: 'تعذر الاتصال بخادم البريد VPS https://api.snns.pro',
+      details: err?.message || String(err),
+      targetUrl,
+    });
+  }
+});
+
 // 1. Send Internal Email
 app.post('/api/internal-mail/send', (req, res) => {
   const { sender, senderName, recipient, subject, body } = req.body;
@@ -1572,11 +1623,14 @@ app.post('/api/internal-mail/send', (req, res) => {
   });
 });
 
-// 2. Get Inbox for user
+// 2. Get Inbox for user (Strict privacy enforcement: only recipient's mail is returned)
 app.get('/api/internal-mail/inbox/:email', (req, res) => {
   const email = decodeURIComponent(req.params.email).trim().toLowerCase();
+  if (!email || !email.endsWith('@snns.pro')) {
+    return res.status(400).json({ error: 'صيغة البريد غير صحيحة لنطاق @snns.pro' });
+  }
   const inbox = internalMessagesDB.filter(
-    (msg) => msg.recipient.toLowerCase() === email || email === 'admin@snns.pro'
+    (msg) => msg.recipient.toLowerCase() === email
   );
   return res.json(inbox);
 });
