@@ -25,6 +25,8 @@ import {
 import { storage } from '../../services/storage';
 import { realMailService, VpsMailStatus } from '../../services/realMailService';
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://api.snns.pro').replace(/\/$/, '');
+
 export interface InternalMessage {
   id: string;
   sender: string;
@@ -126,34 +128,46 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
     }, 4000);
   };
 
+  // All mailbox operations require an authenticated Firebase session.
+  // The server MUST derive mailbox ownership from the verified token, never the URL.
+  const authenticatedHeaders = useCallback(async (): Promise<Record<string, string>> => {
+    const token = await realMailService.getFirebaseIdToken();
+    if (!token) throw new Error('يجب تسجيل الدخول للوصول إلى البريد');
+    return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  }, []);
+
   // Fetch inbox
   const fetchInbox = useCallback(async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
-      const res = await fetch(`/api/internal-mail/inbox/${encodeURIComponent(safeSenderEmail)}`);
+      const res = await fetch(`${API_BASE}/api/internal-mail/inbox/${encodeURIComponent(safeSenderEmail)}`, { headers: await authenticatedHeaders(), cache: 'no-store' });
       if (res.ok) {
         const data: InternalMessage[] = await res.json();
         setInbox(data);
+      } else {
+        throw new Error(`Inbox API HTTP ${res.status}`);
       }
     } catch (err) {
       console.warn('Could not fetch internal inbox:', err);
     } finally {
       if (!silent) setIsRefreshing(false);
     }
-  }, [safeSenderEmail]);
+  }, [safeSenderEmail, authenticatedHeaders]);
 
   // Fetch sent messages
   const fetchSent = useCallback(async () => {
     try {
-      const res = await fetch(`/api/internal-mail/sent/${encodeURIComponent(safeSenderEmail)}`);
+      const res = await fetch(`${API_BASE}/api/internal-mail/sent/${encodeURIComponent(safeSenderEmail)}`, { headers: await authenticatedHeaders(), cache: 'no-store' });
       if (res.ok) {
         const data: InternalMessage[] = await res.json();
         setSentMessages(data);
+      } else {
+        throw new Error(`Sent API HTTP ${res.status}`);
       }
     } catch (err) {
       console.warn('Could not fetch sent internal messages:', err);
     }
-  }, [safeSenderEmail]);
+  }, [safeSenderEmail, authenticatedHeaders]);
 
   // Refresh both
   const refreshAll = useCallback(() => {
@@ -175,7 +189,8 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
     setSelectedMessage(msg);
     if (!msg.read) {
       try {
-        await fetch(`/api/internal-mail/read/${msg.id}`, { method: 'PATCH' });
+        const res = await fetch(`${API_BASE}/api/internal-mail/read/${encodeURIComponent(msg.id)}`, { method: 'PATCH', headers: await authenticatedHeaders() });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         setInbox((prev) =>
           prev.map((m) => (m.id === msg.id ? { ...m, read: true } : m))
         );
@@ -189,7 +204,7 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
   const handleDeleteMessage = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     try {
-      const res = await fetch(`/api/internal-mail/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/internal-mail/${encodeURIComponent(id)}`, { method: 'DELETE', headers: await authenticatedHeaders() });
       if (res.ok) {
         setInbox((prev) => prev.filter((m) => m.id !== id));
         setSentMessages((prev) => prev.filter((m) => m.id !== id));
@@ -232,13 +247,9 @@ export const InternalMailBox: React.FC<InternalMailBoxProps> = ({
 
     setIsSending(true);
     try {
-      const token = await realMailService.getFirebaseIdToken();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      const headers = await authenticatedHeaders();
 
-      const res = await fetch('/api/internal-mail/send', {
+      const res = await fetch(`${API_BASE}/api/internal-mail/send`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

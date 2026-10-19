@@ -8,6 +8,8 @@ import {
   AdminAuthVerification,
 } from '../types/admin';
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://api.snns.pro').replace(/\/$/, '');
+
 const ADMIN_STORAGE_TOKEN = 'snns_admin_session_token';
 const ADMIN_STORAGE_EMAIL = 'snns_admin_session_email';
 
@@ -35,8 +37,9 @@ class AdminService {
 
   public async verifyAdminStatus(): Promise<AdminAuthVerification> {
     try {
-      const res = await fetch('/api/admin/verify', {
+      const res = await fetch(`${API_BASE}/api/admin/verify`, {
         headers: this.getAuthHeaders(),
+        cache: 'no-store',
       });
       if (res.ok) {
         const data = await res.json();
@@ -59,6 +62,8 @@ class AdminService {
     // Default unverified
     this.isVerified = false;
     this.currentSupervisor = null;
+    this.permissions = { canManageApps: false, canManageGovDirectory: false, canReviewQueue: false, canManageSupervisors: false, canCustomizeAppearance: false };
+    this.notifyAuthChange();
     return {
       isAuthenticated: false,
       isVerifiedAdmin: false,
@@ -69,7 +74,7 @@ class AdminService {
 
   public async loginAdmin(passcode: string, email?: string): Promise<{ success: boolean; error?: string; supervisor?: SupervisorAccount }> {
     try {
-      const res = await fetch('/api/admin/login', {
+      const res = await fetch(`${API_BASE}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passcode, email }),
@@ -148,7 +153,7 @@ class AdminService {
   // --- GOV DIRECTORY API ---
   public async getGovDirectory(): Promise<GovEntity[]> {
     try {
-      const res = await fetch('/api/admin/gov-directory');
+      const res = await fetch(`${API_BASE}/api/admin/gov-directory`);
       if (res.ok) {
         const data = await res.json();
         return data.entities || [];
@@ -161,7 +166,7 @@ class AdminService {
 
   public async upsertGovEntity(entity: Partial<GovEntity>): Promise<{ success: boolean; error?: string; entities?: GovEntity[] }> {
     try {
-      const res = await fetch('/api/admin/gov-directory/upsert', {
+      const res = await fetch(`${API_BASE}/api/admin/gov-directory/upsert`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(entity),
@@ -176,7 +181,7 @@ class AdminService {
 
   public async updateGovEntityStatus(id: string, status: 'approved' | 'pending_review' | 'rejected'): Promise<{ success: boolean; error?: string; entities?: GovEntity[] }> {
     try {
-      const res = await fetch('/api/admin/gov-directory/status', {
+      const res = await fetch(`${API_BASE}/api/admin/gov-directory/status`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ id, status }),
@@ -192,7 +197,7 @@ class AdminService {
   // --- APPS & SITES MANAGEMENT API ---
   public async getManagedApps(): Promise<ManagedSiteApp[]> {
     try {
-      const res = await fetch('/api/admin/apps');
+      const res = await fetch(`${API_BASE}/api/admin/apps`);
       if (res.ok) {
         const data = await res.json();
         return data.apps || [];
@@ -205,7 +210,7 @@ class AdminService {
 
   public async upsertManagedApp(app: Partial<ManagedSiteApp>): Promise<{ success: boolean; error?: string; apps?: ManagedSiteApp[] }> {
     try {
-      const res = await fetch('/api/admin/apps/upsert', {
+      const res = await fetch(`${API_BASE}/api/admin/apps/upsert`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(app),
@@ -220,7 +225,7 @@ class AdminService {
 
   public async updateAppStatus(id: string, status: 'published' | 'hidden' | 'archived' | 'pending_review'): Promise<{ success: boolean; error?: string; apps?: ManagedSiteApp[] }> {
     try {
-      const res = await fetch('/api/admin/apps/status', {
+      const res = await fetch(`${API_BASE}/api/admin/apps/status`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ id, status }),
@@ -236,7 +241,7 @@ class AdminService {
   // --- REVIEW QUEUE & AUDIT LOG API ---
   public async getReviewQueue(): Promise<{ queue: ReviewQueueItem[]; auditLogs: AuditLogEntry[] }> {
     try {
-      const res = await fetch('/api/admin/review-queue', {
+      const res = await fetch(`${API_BASE}/api/admin/review-queue`, {
         headers: this.getAuthHeaders(),
       });
       if (res.ok) {
@@ -251,7 +256,7 @@ class AdminService {
 
   public async resolveReviewItem(id: string, status: 'approved' | 'rejected', reviewNotes?: string): Promise<{ success: boolean; error?: string; queue?: ReviewQueueItem[]; auditLogs?: AuditLogEntry[] }> {
     try {
-      const res = await fetch('/api/admin/review-queue/resolve', {
+      const res = await fetch(`${API_BASE}/api/admin/review-queue/resolve`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ id, status, reviewNotes }),
@@ -266,7 +271,7 @@ class AdminService {
 
   public async getAuditLogs(): Promise<AuditLogEntry[]> {
     try {
-      const res = await fetch('/api/admin/audit-logs');
+      const res = await fetch(`${API_BASE}/api/admin/audit-logs`);
       if (res.ok) {
         const data = await res.json();
         return data.logs || [];
@@ -280,7 +285,7 @@ class AdminService {
   // --- SUPERVISORS & RBAC API ---
   public async getSupervisors(): Promise<SupervisorAccount[]> {
     try {
-      const res = await fetch('/api/admin/supervisors', {
+      const res = await fetch(`${API_BASE}/api/admin/supervisors`, {
         headers: this.getAuthHeaders(),
       });
       if (res.ok) {
@@ -299,7 +304,7 @@ class AdminService {
     status?: 'active' | 'suspended'
   ): Promise<{ success: boolean; error?: string; supervisors?: SupervisorAccount[] }> {
     try {
-      const res = await fetch('/api/admin/supervisors/update-permissions', {
+      const res = await fetch(`${API_BASE}/api/admin/supervisors/update-permissions`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ supervisorId, permissions, status }),
@@ -320,7 +325,7 @@ class AdminService {
     permissions: Partial<SupervisorPermissions>;
   }): Promise<{ success: boolean; error?: string; supervisors?: SupervisorAccount[] }> {
     try {
-      const res = await fetch('/api/admin/supervisors/add', {
+      const res = await fetch(`${API_BASE}/api/admin/supervisors/add`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(payload),
