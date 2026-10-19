@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { DynamicAppTile, PageLayoutConfig, UserProfile } from '../../types/suite';
 import { AdminControlPanel } from './AdminControlPanel';
+import { VerifiedDirectoryAdminSection } from './VerifiedDirectoryAdminSection';
+import { PageBuilderSection } from './PageBuilderSection';
 import { adminService } from '../../services/adminService';
 import { storage } from '../../services/storage';
 
@@ -51,7 +53,14 @@ export const StsAdminPortal: React.FC<StsAdminPortalProps> = ({
   const [passcode, setPasscode] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'control' | 'health' | 'audit'>('control');
+  const [activeSubTab, setActiveSubTab] = useState<'control' | 'directory' | 'health' | 'page-builder'>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.includes('/directory')) return 'directory';
+      if (path.includes('/page-builder') || path.includes('/appearance')) return 'page-builder';
+    }
+    return 'control';
+  });
   const [stsStats, setStsStats] = useState<{
     supervisorsCount: number;
     appsCount: number;
@@ -276,6 +285,26 @@ export const StsAdminPortal: React.FC<StsAdminPortalProps> = ({
             {isAr ? 'لوحة التحكم المركزية' : 'Admin Hub'}
           </button>
           <button
+            onClick={() => setActiveSubTab('directory')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+              activeSubTab === 'directory'
+                ? 'bg-amber-500 text-slate-950'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            {isAr ? 'دليل الروابط (/sts/directory)' : 'Verified Directory'}
+          </button>
+          <button
+            onClick={() => setActiveSubTab('page-builder')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+              activeSubTab === 'page-builder'
+                ? 'bg-amber-500 text-slate-950'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            {isAr ? 'مُصمّم الصفحة (/sts/page-builder)' : 'Page Builder'}
+          </button>
+          <button
             onClick={() => setActiveSubTab('health')}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
               activeSubTab === 'health'
@@ -302,6 +331,14 @@ export const StsAdminPortal: React.FC<StsAdminPortalProps> = ({
               onLockAdmin={handleLogout}
               isStandaloneSts
             />
+          </div>
+        ) : activeSubTab === 'directory' ? (
+          <div className="max-w-6xl mx-auto">
+            <VerifiedDirectoryAdminSection lang={lang} />
+          </div>
+        ) : activeSubTab === 'page-builder' ? (
+          <div className="max-w-6xl mx-auto">
+            <PageBuilderSection lang={lang} />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">

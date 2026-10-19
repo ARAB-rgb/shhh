@@ -355,13 +355,15 @@ export const LauncherHub: React.FC<LauncherHubProps> = ({
 
       {/* Render Selected Hero */}
       {heroMode === 'saudi-search' ? (
-        <SaudiSearchHero
-          onSearchQuery={(q) => onSelectApp('snns-ai')}
-          onSelectApp={onSelectApp}
-          lang={lang}
-          isDarkMode={isDarkMode}
-          onOpenPwaModal={() => onOpenPwaModal && onOpenPwaModal()}
-        />
+        <div className="w-full flex flex-col items-center justify-center min-h-[70vh]">
+          <SaudiSearchHero
+            onSearchQuery={(q) => onSelectApp('snns-ai')}
+            onSelectApp={onSelectApp}
+            lang={lang}
+            isDarkMode={isDarkMode}
+            onOpenPwaModal={() => onOpenPwaModal && onOpenPwaModal()}
+          />
+        </div>
       ) : pageLayout.showHeroBanner ? (
         <>
           <RoyalLeadershipBanner lang={lang} />
@@ -414,7 +416,9 @@ export const LauncherHub: React.FC<LauncherHubProps> = ({
       ) : null}
 
       {/* Categories & Filter Tabs Bar with Luxury Smooth Horizontal Navigation */}
-      <div className="w-full flex items-center justify-between gap-2.5 mb-3 px-1 text-xs select-none">
+      {heroMode !== 'saudi-search' && (
+        <div className="w-full flex flex-col items-center">
+          <div className="w-full flex items-center justify-between gap-2.5 mb-3 px-1 text-xs select-none">
         {/* Scroll Container Wrapper with Navigation Arrows */}
         <div className="flex-1 relative flex items-center min-w-0">
           {/* Previous / Start Navigation Arrow */}
@@ -912,6 +916,8 @@ export const LauncherHub: React.FC<LauncherHubProps> = ({
             ))}
           </div>
         </div>
+      )}
+      </div>
       )}
       {/* Quick Direct Rename & Edit Modal */}
       {quickRenameTile && (

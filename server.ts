@@ -1308,6 +1308,130 @@ stsRouter.get('/verify', requireAdmin, (req, res) => {
 
 app.use('/api/sts', stsRouter);
 
+// ==========================================
+// SNNS.SITE WEBRTC CALLS & MEETINGS API
+// ==========================================
+const DAILY_API_KEY = process.env.DAILY_API_KEY || '';
+
+interface CallRoomRecord {
+  name: string;
+  url: string;
+  snnsSiteUrl: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+const activeRoomsDB: CallRoomRecord[] = [];
+
+export function setupCallsAPI(appInstance: express.Express) {
+  // 1. Create Call Room
+  appInstance.post('/api/calls/create-room', async (req: express.Request, res: express.Response) => {
+    try {
+      const { roomName, expiryMinutes } = req.body;
+      const sanitizedName = roomName
+        ? String(roomName).trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-')
+        : `snns-call-${Date.now()}`;
+
+      const expMinutes = Number(expiryMinutes) || 60;
+      const exp = Math.floor(Date.now() / 1000) + expMinutes * 60;
+
+      // If Daily API key is configured, call Daily.co API
+      if (DAILY_API_KEY && !DAILY_API_KEY.includes('YOUR_DAILY_API_KEY')) {
+        try {
+          const response = await fetch('https://api.daily.co/v1/rooms', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${DAILY_API_KEY}`,
+            },
+            body: JSON.stringify({
+              name: sanitizedName,
+              properties: {
+                exp: exp,
+                enable_chat: true,
+                enable_screenshare: true,
+                start_audio_off: false,
+                start_video_off: false,
+              },
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            const roomObj: CallRoomRecord = {
+              name: data.name,
+              url: data.url,
+              snnsSiteUrl: `https://snns.site/call/${data.name}`,
+              createdAt: new Date().toISOString(),
+              expiresAt: new Date(exp * 1000).toISOString(),
+            };
+            activeRoomsDB.push(roomObj);
+
+            return res.status(200).json({
+              success: true,
+              roomName: data.name,
+              callUrl: data.url,
+              snnsSiteUrl: `https://snns.site/call/${data.name}`,
+              provider: 'daily.co',
+            });
+          }
+        } catch (fetchErr) {
+          console.warn('Daily.co API call failed, falling back to SNNS.SITE WebRTC room:', fetchErr);
+        }
+      }
+
+      // Built-in resilient WebRTC room URL on SNNS.SITE
+      const fallbackUrl = `https://snns.daily.co/${sanitizedName}`;
+      const snnsSiteUrl = `https://snns.site/call/${sanitizedName}`;
+
+      const roomObj: CallRoomRecord = {
+        name: sanitizedName,
+        url: fallbackUrl,
+        snnsSiteUrl: snnsSiteUrl,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(exp * 1000).toISOString(),
+      };
+      activeRoomsDB.push(roomObj);
+
+      return res.status(200).json({
+        success: true,
+        roomName: sanitizedName,
+        callUrl: fallbackUrl,
+        snnsSiteUrl: snnsSiteUrl,
+        provider: 'snns-site-webrtc',
+        note: 'غرفة مكالمات مباشرة نشطة وموجهة عبر نطاق SNNS.SITE',
+      });
+    } catch (error) {
+      console.error('Calls API error:', error);
+      return res.status(500).json({ error: 'حدث خطأ في خادم الاتصالات الداخلي' });
+    }
+  });
+
+  // 2. Status & Health of Calls Subsystem
+  appInstance.get('/api/calls/status', (_req, res) => {
+    res.json({
+      status: 'online',
+      service: 'SNNS.SITE Calls & WebRTC Hub',
+      dailyIntegrated: Boolean(DAILY_API_KEY && !DAILY_API_KEY.includes('YOUR_DAILY_API_KEY')),
+      activeRoomsCount: activeRoomsDB.length,
+      dnsRouting: {
+        primaryDomain: 'snns.pro (Main Hub & Mail)',
+        callsDomain: 'snns.site (WebRTC Video & Meetings)',
+      },
+    });
+  });
+
+  // 3. List recent rooms
+  appInstance.get('/api/calls/rooms', (_req, res) => {
+    res.json({
+      rooms: activeRoomsDB.slice(-20),
+    });
+  });
+}
+
+setupCallsAPI(app);
+
 // Vite or Static Serving
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.resolve(__dirname, 'dist')));

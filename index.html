@@ -1,29 +1,245 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SNNS 365 Cloud Suite</title>
-    <meta name="description" content="Comprehensive cloud productivity suite featuring SNNS Word, Excel, PowerPoint, Outlook, Teams, OneDrive, Copilot AI, To Do, OneNote, Designer, Clipchamp, Calendar, Forms, Skype, and Family Safety." />
-    <meta property="og:title" content="SNNS 365 Cloud Suite" />
-    <meta property="og:description" content="Comprehensive cloud productivity suite featuring SNNS Word, Excel, PowerPoint, Outlook, Teams, OneDrive, Copilot AI, To Do, OneNote, Designer, Clipchamp, Calendar, Forms, Skype, and Family Safety." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
-    <link rel="manifest" id="manifest-link" href="/manifest.json" />
-    <meta name="theme-color" content="#064E3B" />
-  </head>
-  <body class="bg-[#0A0D0C] text-slate-100 antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-200">
-    <div id="root"></div>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-      }
-    </script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNNS.PRO - دليل المواقع والخدمات السحابية المعتمدة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #030712;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
 
+        .app-container {
+            border: 1.5px solid rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 35px rgba(16, 185, 129, 0.12), inset 0 0 15px rgba(245, 158, 11, 0.05);
+            border-radius: 24px;
+        }
+
+        .bg-glow-1 {
+            position: absolute;
+            top: 20%;
+            left: 30%;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            filter: blur(60px);
+            pointer-events: none;
+        }
+
+        .bg-glow-2 {
+            position: absolute;
+            bottom: 15%;
+            right: 25%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+            filter: blur(70px);
+            pointer-events: none;
+        }
+
+        .logo-glow {
+            text-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#030712] p-2 md:p-6 flex flex-col justify-between relative selection:bg-emerald-500 selection:text-white">
+
+    <div id="glow1" class="bg-glow-1"></div>
+    <div id="glow2" class="bg-glow-2"></div>
+
+    <!-- شريط الأدوات العلوي -->
+    <header class="w-full flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-[#090d16]/90 border border-gray-800/80 rounded-2xl backdrop-blur-md z-20 text-xs text-gray-300">
+        <div class="flex items-center gap-3">
+            <button class="flex items-center gap-2 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-semibold transition">
+                <span>15 تطبيقاً •</span>
+            </button>
+            <div class="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg text-emerald-400 font-bold">
+                <span>PRO.SNNS</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </div>
+            <a href="#" class="bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-lg font-medium transition">
+                🛡️ بوابة الإدارة / sts
+            </a>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="bg-gray-800/80 border border-gray-700 px-3 py-1 rounded-lg text-gray-300">مجموعة قيد القابضة للتقنية...</span>
+            <div class="flex items-center gap-1">
+                <span class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs">HO</span>
+                <span class="text-xs font-semibold">Htaf</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- الحاوية الرئيسية -->
+    <main class="app-container my-4 p-6 md:p-12 flex-grow flex flex-col items-center justify-center relative z-10 bg-[#060a12]/60 backdrop-blur-sm">
+        
+        <!-- الشريط الرئاسي -->
+        <div class="mb-8 flex items-center gap-4 bg-[#0d1322]/90 border border-amber-500/30 px-6 py-2.5 rounded-full shadow-lg text-xs">
+            <span class="text-gray-300 font-bold">المملكة العربية السعودية • KSA 2030</span>
+        </div>
+
+        <!-- الشعار الرئيسي -->
+        <div class="text-center mb-6">
+            <h1 class="logo-glow text-6xl md:text-8xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">
+                SNNS<span class="text-amber-400">.</span>PRO
+            </h1>
+            <p class="text-emerald-400/80 font-semibold text-sm md:text-base mt-2">
+                دليل المواقع والخدمات السحابية المعتمدة
+            </p>
+        </div>
+
+        <!-- قائمة منسدلة ديناميكية لاختيار التصنيف والتصفية -->
+        <div class="w-full max-w-2xl mb-4 flex items-center gap-2">
+            <select id="categoryFilter" onchange="filterByCategory()" class="w-full bg-[#0a101d] border border-emerald-500/40 text-gray-200 text-xs rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400">
+                <option value="all">📂 جميع التصنيفات والجهات المعتمدة</option>
+                <option value="government">🏛️ الوزارات والدوائر الحكومية</option>
+                <option value="companies">🏢 الشركات والقطاع الخاص</option>
+                <option value="education">🎓 التعليم والجامعات</option>
+                <option value="finance">💳 الخدمات المالية والبنوك</option>
+            </select>
+        </div>
+
+        <!-- صندوق البحث -->
+        <div class="w-full max-w-2xl relative mb-6">
+            <input type="text" id="searchInput" oninput="searchServices()" placeholder="ابحث في الخدمات والمواقع المعتمدة..." 
+                class="w-full pr-6 pl-14 py-3.5 bg-[#0a101d]/90 border border-emerald-500/40 rounded-full text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-400 shadow-2xl">
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+        </div>
+
+        <!-- أزرار الإجراءات -->
+        <div class="flex flex-wrap justify-center gap-3 mb-8">
+            <button class="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs px-6 py-2.5 rounded-full transition shadow-lg shadow-emerald-500/20">
+                🔍 بحث في الدليل
+            </button>
+            <button onclick="openModal()" class="bg-[#0f172a] hover:bg-gray-800 text-emerald-400 border border-emerald-500/30 font-semibold text-xs px-6 py-2.5 rounded-full transition">
+                + إضافة جهة أو شركة جديدة
+            </button>
+        </div>
+
+        <!-- حاوية عرض التصنيفات والشركات والدوائر الحكومية الديناميكية -->
+        <div id="servicesContainer" class="flex flex-wrap justify-center gap-3 max-w-4xl text-xs font-semibold">
+            <a href="#" data-category="government" class="service-item bg-[#0d1527]/80 hover:bg-emerald-950/40 border border-gray-800 px-4 py-2.5 rounded-xl text-gray-300 transition flex items-center gap-2">
+                🏛️ الوزارات والهيئات
+            </a>
+            <a href="#" data-category="government" class="service-item bg-[#0d1527]/80 hover:bg-emerald-950/40 border border-gray-800 px-4 py-2.5 rounded-xl text-gray-300 transition flex items-center gap-2">
+                ⚖️ الخدمات العدلية والقضائية (ناجز، نافذ)
+            </a>
+            <a href="#" data-category="education" class="service-item bg-[#0d1527]/80 hover:bg-emerald-950/40 border border-gray-800 px-4 py-2.5 rounded-xl text-gray-300 transition flex items-center gap-2">
+                🎓 التعليم والجامعات
+            </a>
+            <a href="#" data-category="finance" class="service-item bg-[#0d1527]/80 hover:bg-emerald-950/40 border border-gray-800 px-4 py-2.5 rounded-xl text-amber-400/90 transition flex items-center gap-2">
+                💳 الخدمات المالية والبنوك
+            </a>
+        </div>
+    </main>
+
+    <!-- نافذة منبثقة (Modal) لإضافة جهة أو شركة أو تصنيف جديد -->
+    <div id="addModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-[#090d16] border border-emerald-500/40 rounded-2xl p-6 w-full max-w-md shadow-2xl text-right">
+            <h3 class="text-emerald-400 font-bold text-base mb-4">إضافة دائرة حكومية أو شركة أو تصنيف جديد</h3>
+            
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-gray-400 mb-1">اختر التصنيف الرئيسي:</label>
+                    <select id="newCategoryType" class="w-full bg-[#0a101d] border border-gray-700 rounded-lg p-2.5 text-white">
+                        <option value="government">🏛️ دوائر حكومية ووزارات</option>
+                        <option value="companies">🏢 شركات وقطاع خاص</option>
+                        <option value="education">🎓 تعليم وجامعات</option>
+                        <option value="finance">💳 خدمات مالية وبنوك</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-1">اسم الجهة أو الشركة أو التصنيف:</label>
+                    <input type="text" id="newName" placeholder="مثال: هيئة الاتصالات / شركة تقنية..." class="w-full bg-[#0a101d] border border-gray-700 rounded-lg p-2.5 text-white">
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-1">رابط الموقع السحابي:</label>
+                    <input type="text" id="newUrl" placeholder="https://..." class="w-full bg-[#0a101d] border border-gray-700 rounded-lg p-2.5 text-white">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="closeModal()" class="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg text-xs">إلغاء</button>
+                <button onclick="addNewItem()" class="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-4 py-2 rounded-lg text-xs">حفظ وإضافة فورية</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="w-full text-center py-2 text-xs text-gray-500 z-10">
+        جميع الحقوق محفوظة © SNNS.PRO 2026
+    </footer>
+
+    <!-- سكربت التحكم الديناميكي والإضافة الفورية -->
+    <script>
+        function openModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('addModal').classList.add('hidden');
+        }
+
+        function addNewItem() {
+            const name = document.getElementById('newName').value.trim();
+            const url = document.getElementById('newUrl').value.trim();
+            const category = document.getElementById('newCategoryType').value;
+
+            if (!name) {
+                alert('الرجاء إدخال اسم الجهة أو الشركة');
+                return;
+            }
+
+            const container = document.getElementById('servicesContainer');
+            const newElement = document.createElement('a');
+            newElement.href = url ? url : '#';
+            newElement.target = '_blank';
+            newElement.setAttribute('data-category', category);
+            newElement.className = "service-item bg-[#0d1527]/80 hover:bg-emerald-950/40 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-emerald-300 transition flex items-center gap-2";
+            newElement.innerHTML = `🏢 ${name}`;
+
+            container.appendChild(newElement);
+            closeModal();
+
+            // مسح الحقول
+            document.getElementById('newName').value = '';
+            document.getElementById('newUrl').value = '';
+        }
+
+        function filterByCategory() {
+            const selectedCategory = document.getElementById('categoryFilter').value;
+            const items = document.querySelectorAll('.service-item');
+
+            items.forEach(item => {
+                const itemCategory = item.getAttribute('data-category');
+                if (selectedCategory === 'all' || itemCategory === selectedCategory) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function searchServices() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const items = document.querySelectorAll('.service-item');
+
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

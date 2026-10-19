@@ -40,8 +40,6 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
   initialAppId,
   onLaunchStandaloneApp,
 }) => {
-  if (!isOpen) return null;
-
   const isAr = lang === 'ar';
   const [selectedAppId, setSelectedAppId] = useState<AppId | 'full-platform'>(
     initialAppId || 'full-platform'
@@ -125,6 +123,8 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
     link.click();
     setInstallStatus(isAr ? `تم تنزيل ملف Manifest لتطبيق ${app.nameAr} بنجاح` : 'Manifest downloaded successfully');
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">

@@ -24,6 +24,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { AppId } from '../../types/suite';
+import { storage } from '../../services/storage';
 
 interface AppearanceThemeSectionProps {
   lang: 'en' | 'ar';
@@ -43,6 +44,14 @@ export const AppearanceThemeSection: React.FC<AppearanceThemeSectionProps> = ({
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [savedNotice, setSavedNotice] = useState<boolean>(false);
   const [resetNotice, setResetNotice] = useState<boolean>(false);
+  const [heroBgUrl, setHeroBgUrl] = useState<string>(() => storage.getHeroBackground());
+  const [bgSavedNotice, setBgSavedNotice] = useState<boolean>(false);
+
+  const handleSaveHeroBg = () => {
+    storage.saveHeroBackground(heroBgUrl.trim());
+    setBgSavedNotice(true);
+    setTimeout(() => setBgSavedNotice(false), 2000);
+  };
 
   // Available apps for individual styling
   const customizableApps: { id: AppId; nameAr: string; nameEn: string }[] = [
@@ -759,6 +768,69 @@ export const AppearanceThemeSection: React.FC<AppearanceThemeSectionProps> = ({
               <span>{isAr ? 'تمت استعادة المظهر الافتراضي الرسمي' : 'Reset to official default!'}</span>
             </div>
           )}
+        </div>
+
+        {/* Homepage Panoramic Background Setting Card */}
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4 mb-6">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100 dark:border-slate-800">
+            <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+              <ImageIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                {isAr ? 'خلفية المشهد البانورامي الرئيسية (Homepage Panoramic Background)' : 'Homepage Panoramic Background'}
+              </h3>
+              <p className="text-[11px] text-gray-500">
+                {isAr ? 'تغيير صورة الخلفية البانورامية للواجهة الرئيسية ديناميكياً' : 'Change homepage panoramic background dynamically'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <div>
+              <label className="font-semibold block mb-1 text-gray-700 dark:text-gray-300">
+                {isAr ? 'رابط صورة الخلفية (Image URL):' : 'Background Image URL:'}
+              </label>
+              <input
+                type="text"
+                value={heroBgUrl}
+                onChange={(e) => setHeroBgUrl(e.target.value)}
+                placeholder="https://images.unsplash.com/..."
+                className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-gray-900 dark:text-white font-mono"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[
+                { label: 'Diriyah Panorama', url: 'https://images.unsplash.com/photo-1578895101408-1a3af889d2b7?q=80&w=2000&auto=format&fit=crop' },
+                { label: 'Heritage Mud Architecture', url: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=2000&auto=format&fit=crop' },
+                { label: 'Modern Futuristic Riyadh', url: 'https://images.unsplash.com/photo-1583573636245-c8fb3cae82a1?q=80&w=2000&auto=format&fit=crop' },
+              ].map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setHeroBgUrl(preset.url)}
+                  className="px-2.5 py-1 bg-gray-100 dark:bg-slate-800 hover:bg-emerald-50 text-gray-700 dark:text-gray-300 rounded-lg text-[11px] font-medium transition border border-gray-200 dark:border-slate-700"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {bgSavedNotice && (
+              <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl text-center font-bold text-xs animate-in fade-in">
+                {isAr ? 'تم حفظ وتحديث الخلفية البانورامية بنجاح!' : 'Panoramic background updated successfully!'}
+              </div>
+            )}
+
+            <button
+              onClick={handleSaveHeroBg}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{isAr ? 'تحديث الخلفية البانورامية' : 'Update Panoramic Background'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Action Buttons */}

@@ -3,6 +3,7 @@ import { AppId, RecentDocument, DynamicAppTile, PageLayoutConfig } from './types
 import { storage } from './services/storage';
 import { TopNav } from './components/layout/TopNav';
 import { LauncherHub } from './components/hub/LauncherHub';
+import { SaudiSearchHero } from './components/hub/SaudiSearchHero';
 import { AdminControlPanel } from './components/admin/AdminControlPanel';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
 import { AddAppModal } from './components/hub/AddAppModal';
@@ -40,6 +41,8 @@ import { appRegistry } from './services/appRegistry';
 import { themeService } from './services/themeService';
 import { InternalMailBox } from './components/common/InternalMailBox';
 import { StsAdminPortal } from './components/admin/StsAdminPortal';
+import { SnnsCallsApp } from './components/apps/SnnsCallsApp';
+import { SnnsCallRoom } from './components/apps/SnnsCallRoom';
 import { ShieldAlert, UserCheck, RefreshCw, ArrowLeft } from 'lucide-react';
 
 export default function App() {
@@ -58,6 +61,17 @@ export default function App() {
       return window.location.pathname.startsWith('/sts');
     }
     return false;
+  });
+  const [directCallRoom, setDirectCallRoom] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.startsWith('/call/')) {
+        return path.replace('/call/', '');
+      }
+      const params = new URLSearchParams(window.location.search);
+      return params.get('call');
+    }
+    return null;
   });
   const [lang, setLang] = useState<'en' | 'ar'>(storage.getLanguage());
   const [searchFilter, setSearchFilter] = useState<string>('');
@@ -87,9 +101,16 @@ export default function App() {
     const handlePopState = () => {
       if (typeof window !== 'undefined') {
         setIsStsRoute(window.location.pathname.startsWith('/sts'));
-        const params = new URLSearchParams(window.location.search);
-        const appParam = params.get('app') as AppId | null;
-        setCurrentApp(appParam);
+        const path = window.location.pathname;
+        if (path.startsWith('/call/')) {
+          setDirectCallRoom(path.replace('/call/', ''));
+        } else {
+          const params = new URLSearchParams(window.location.search);
+          const callParam = params.get('call');
+          setDirectCallRoom(callParam);
+          const appParam = params.get('app') as AppId | null;
+          setCurrentApp(appParam);
+        }
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -361,6 +382,22 @@ export default function App() {
 
   const appAccess = currentApp ? appRegistry.canUserAccessApp(currentApp) : { allowed: true };
 
+  if (directCallRoom) {
+    return (
+      <SnnsCallRoom
+        roomName={directCallRoom}
+        userDisplayName={storage.getUserProfile().name || 'مستخدم SNNS'}
+        onLeave={() => {
+          if (typeof window !== 'undefined') {
+            window.history.pushState({}, '', '/');
+          }
+          setDirectCallRoom(null);
+        }}
+        lang={lang}
+      />
+    );
+  }
+
   if (isStsRoute) {
     return (
       <StsAdminPortal
@@ -481,28 +518,15 @@ export default function App() {
         ) : (
           <>
             {!currentApp && (
-              <LauncherHub
-                onSelectApp={(app) => handleSelectApp(app)}
-                lang={lang}
-                searchFilter={searchFilter}
-                recentDocs={recentDocs}
-                onOpenRecentDoc={handleOpenRecentDoc}
-                tiles={launcherTiles}
-                pageLayout={pageLayout}
-                isAdminMode={isAdminMode}
-                onOpenAdminPanel={(tileId) => {
-                  setAdminSelectedTileId(tileId || null);
-                  setShowAdminPanel(true);
-                }}
-                onOpenAddAppModal={() => setShowAddAppModal(true)}
-                onMoveTile={handleMoveTile}
-                onSaveTiles={handleSaveTiles}
-                onOpenPwaModal={(appId) => {
-                  setPwaModalInitialApp(appId || null);
-                  setShowPwaModal(true);
-                }}
-                isDarkMode={isDarkMode}
-              />
+              <div className="w-full min-h-[85vh] flex flex-col items-center justify-center p-4">
+                <SaudiSearchHero
+                  onSearchQuery={(q) => handleSelectApp('snns-ai')}
+                  onSelectApp={(app) => handleSelectApp(app)}
+                  lang={lang}
+                  isDarkMode={isDarkMode}
+                  onOpenPwaModal={() => setShowPwaModal(true)}
+                />
+              </div>
             )}
 
             {currentApp === 'qayd-pos' && (
@@ -538,7 +562,11 @@ export default function App() {
               />
             )}
 
-            {(currentApp === 'snns-calls' || currentApp === 'skype') && (
+            {currentApp === 'snns-calls' && (
+              <SnnsCallsApp onBack={() => handleSelectApp(null)} lang={lang} />
+            )}
+
+            {currentApp === 'skype' && (
               <SkypeApp onBack={() => handleSelectApp(null)} lang={lang} />
             )}
 

@@ -315,6 +315,52 @@ export const TopNav: React.FC<TopNavProps> = ({
               <X className="w-3.5 h-3.5" />
             </button>
           )}
+
+          {/* Backend Controlled Search Dropdown */}
+          {searchVal.trim() && (
+            <div className="absolute top-full mt-2 start-0 w-96 max-w-[95vw] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 p-3 text-gray-800 dark:text-white text-xs z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-800 mb-2 font-bold text-gray-500 text-[11px]">
+                <span>{isAr ? 'نتائج البحث المعتمد في الدليل الداخلي' : 'Verified Directory Search'}</span>
+                <span>{storage.searchVerifiedLinks(searchVal).length} {isAr ? 'نتائج' : 'results'}</span>
+              </div>
+
+              {storage.searchVerifiedLinks(searchVal).length > 0 ? (
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {storage.searchVerifiedLinks(searchVal).map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setSearchVal('')}
+                      className="block p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-gray-100 dark:border-slate-800 transition"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="font-bold text-blue-700 dark:text-blue-300 truncate">{link.title}</span>
+                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                          <Check className="w-2.5 h-2.5" />
+                          <span>{isAr ? 'رابط رسمي معتمد' : 'Verified Official'}</span>
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-300 line-clamp-1 mb-1">{link.description}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono">
+                        <span>{link.category} {link.subCategory ? `› ${link.subCategory}` : ''}</span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-gray-500 dark:text-slate-400 space-y-2">
+                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                    {isAr ? 'عذراً، هذه الخدمة غير مفهرسة في الدليل المعتمد.' : 'Sorry, this service is not indexed in the verified directory.'}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {isAr ? 'يمكنك رفع طلب إضافتها للإدارة.' : 'You can request its addition through administration.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

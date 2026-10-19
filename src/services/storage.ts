@@ -14,6 +14,7 @@ import {
   PrintJob,
   UserProfile,
   UserSecuritySettings,
+  VerifiedLink,
 } from '../types/suite';
 
 export const DEFAULT_SECURITY_SETTINGS: UserSecuritySettings = {
@@ -1750,6 +1751,146 @@ export const storage = {
     } catch {
       return [];
     }
+  },
+
+  getVerifiedLinks: (): VerifiedLink[] => {
+    try {
+      const saved = localStorage.getItem('snns_verified_links');
+      if (saved) return JSON.parse(saved);
+      const defaultLinks: VerifiedLink[] = [
+        {
+          id: 'link-1',
+          title: 'منصة ناجز (Najiz)',
+          url: 'https://najiz.sa',
+          description: 'بوابة ناجز العدلية التابعة لوزارة العدل السعودية لتقديم الخدمات القضائية والتوثيق',
+          category: 'دوائر حكومية',
+          subCategory: 'وزارة العدل - خدمات قضائية',
+          keywords: ['ناجز', 'عدل', 'صكوك', 'وكالات', 'قضاء', 'توثيق'],
+          addedBy: 'a@snns.pro (Super Admin)',
+          isVerified: true,
+          createdDate: '2026-10-01',
+        },
+        {
+          id: 'link-2',
+          title: 'منصة أبشر (Absher)',
+          url: 'https://absher.sa',
+          description: 'منصة الخدمات الإلكترونية لوزارة الداخلية السعودية (أفراد وبزنس)',
+          category: 'دوائر حكومية',
+          subCategory: 'وزارة الداخلية - الهوية الرقمية',
+          keywords: ['أبشر', 'إقامة', 'جوازات', 'أحوال', 'مرور', 'هوية'],
+          addedBy: 'a@snns.pro (Super Admin)',
+          isVerified: true,
+          createdDate: '2026-10-01',
+        },
+        {
+          id: 'link-3',
+          title: 'منصة نافذ (Nafith)',
+          url: 'https://nafith.sa',
+          description: 'منصة السندات التنفيذية الإلكترونية لتوثيق وحفظ الحقوق المالية',
+          category: 'خدمات مالية',
+          subCategory: 'وزارة العدل - السندات الإلكترونية',
+          keywords: ['نافذ', 'سندات', 'تنفيذ', 'مالي', 'كمبيالة'],
+          addedBy: 'a@snns.pro (Super Admin)',
+          isVerified: true,
+          createdDate: '2026-10-02',
+        },
+        {
+          id: 'link-4',
+          title: 'هيئة الزكاة والضريبة والجمارك (ZATCA)',
+          url: 'https://zatca.gov.sa',
+          description: 'بوابة الزكاة والضريبة والجمارك وخدمات الفوترة الإلكترونية',
+          category: 'وزارات وهيئات',
+          subCategory: 'هيئة الزكاة والضريبة',
+          keywords: ['زاتكا', 'ضريبة', 'زكاة', 'جمارك', 'فاتورة', 'zatca'],
+          addedBy: 'a@snns.pro (Super Admin)',
+          isVerified: true,
+          createdDate: '2026-10-03',
+        },
+        {
+          id: 'link-5',
+          title: 'منصة مدرستي (Madrasati)',
+          url: 'https://madrasati.sa',
+          description: 'منصة التعليم الإلكتروني التابعة لوزارة التعليم السعودية',
+          category: 'تعليم ومدارس',
+          subCategory: 'وزارة التعليم - التعليم المدرسي',
+          keywords: ['مدرستي', 'تعليم', 'مدرس', 'طالب', 'دروس', 'واجبات'],
+          addedBy: 'a@snns.pro (Super Admin)',
+          isVerified: true,
+          createdDate: '2026-10-04',
+        },
+      ];
+      localStorage.setItem('snns_verified_links', JSON.stringify(defaultLinks));
+      return defaultLinks;
+    } catch {
+      return [];
+    }
+  },
+  saveVerifiedLink: (link: VerifiedLink) => {
+    try {
+      const current = storage.getVerifiedLinks();
+      const index = current.findIndex((l) => l.id === link.id);
+      let updated: VerifiedLink[];
+      if (index >= 0) {
+        updated = [...current];
+        updated[index] = link;
+      } else {
+        updated = [link, ...current];
+      }
+      localStorage.setItem('snns_verified_links', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('snns_verified_links_updated', { detail: updated }));
+    } catch (e) {
+      console.error('Error saving verified link:', e);
+    }
+  },
+  deleteVerifiedLink: (id: string) => {
+    try {
+      const current = storage.getVerifiedLinks();
+      const updated = current.filter((l) => l.id !== id);
+      localStorage.setItem('snns_verified_links', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('snns_verified_links_updated', { detail: updated }));
+    } catch (e) {
+      console.error('Error deleting verified link:', e);
+    }
+  },
+  searchVerifiedLinks: (query: string): VerifiedLink[] => {
+    const links = storage.getVerifiedLinks();
+    if (!query || !query.trim()) return [];
+    const q = query.trim().toLowerCase();
+    return links.filter((item) => {
+      const matchesTitle = item.title.toLowerCase().includes(q);
+      const matchesDesc = item.description.toLowerCase().includes(q);
+      const matchesCat = item.category.toLowerCase().includes(q);
+      const matchesSubCat = item.subCategory && item.subCategory.toLowerCase().includes(q);
+      const matchesKeywords = item.keywords.some((kw) => kw.toLowerCase().includes(q));
+      return matchesTitle || matchesDesc || matchesCat || matchesSubCat || matchesKeywords;
+    });
+  },
+
+  getHeroBackground: (): string => {
+    try {
+      return localStorage.getItem('snns_hero_bg') || 'https://images.unsplash.com/photo-1578895101408-1a3af889d2b7?q=80&w=2000&auto=format&fit=crop';
+    } catch {
+      return 'https://images.unsplash.com/photo-1578895101408-1a3af889d2b7?q=80&w=2000&auto=format&fit=crop';
+    }
+  },
+  saveHeroBackground: (url: string) => {
+    try {
+      localStorage.setItem('snns_hero_bg', url);
+      window.dispatchEvent(new CustomEvent('snns_hero_bg_updated', { detail: url }));
+    } catch {}
+  },
+  getBackgroundMode: (): 'panorama' | 'dark' => {
+    try {
+      return (localStorage.getItem('snns_bg_mode') as 'panorama' | 'dark') || 'panorama';
+    } catch {
+      return 'panorama';
+    }
+  },
+  saveBackgroundMode: (mode: 'panorama' | 'dark') => {
+    try {
+      localStorage.setItem('snns_bg_mode', mode);
+      window.dispatchEvent(new CustomEvent('snns_bg_mode_updated', { detail: mode }));
+    } catch {}
   },
 };
 

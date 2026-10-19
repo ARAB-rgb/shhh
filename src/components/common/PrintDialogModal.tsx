@@ -35,8 +35,6 @@ export const PrintDialogModal: React.FC<PrintDialogModalProps> = ({
   contentHtml,
   lang,
 }) => {
-  if (!isOpen) return null;
-
   const isAr = lang === 'ar';
 
   const [destination, setDestination] = useState<'system' | 'pdf' | 'cloud'>('system');
@@ -88,6 +86,8 @@ export const PrintDialogModal: React.FC<PrintDialogModalProps> = ({
     month: 'short',
     day: 'numeric',
   });
+
+  if (!isOpen) return null;
 
   return (
     <div
