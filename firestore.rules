@@ -107,6 +107,40 @@ service cloud.firestore {
 
       allow delete: if false;
     }
+
+    // Registered Users & Real-time Presence
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin();
+
+      // Subcollection for user contacts and requests
+      match /contacts/{contactId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    // 1-on-1 Private Conversations (Only participants can read/write)
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn() && (request.auth.uid in resource.data.participantIds);
+      allow create: if isSignedIn() && (request.auth.uid in incoming().participantIds);
+      allow update: if isSignedIn() && (request.auth.uid in resource.data.participantIds);
+      allow delete: if isAdmin();
+
+      // Direct Messages inside conversation
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && (
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds
+        );
+        allow create: if isSignedIn() && (
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds
+        );
+        allow update: if isSignedIn() && (
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds
+        );
+        allow delete: if false;
+      }
+    }
   }
 }
 

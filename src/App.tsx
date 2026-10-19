@@ -44,6 +44,7 @@ import { StsAdminPortal } from './components/admin/StsAdminPortal';
 import { SnnsCallsApp } from './components/apps/SnnsCallsApp';
 import { SnnsCallRoom } from './components/apps/SnnsCallRoom';
 import { ShieldAlert, UserCheck, RefreshCw, ArrowLeft } from 'lucide-react';
+import { connectService } from './services/connectService';
 
 export default function App() {
   const getInitialApp = (): AppId | null => {
@@ -122,6 +123,20 @@ export default function App() {
     const handleRole = () => setActiveRole(appRegistry.getCurrentRole());
     window.addEventListener('snns_role_updated', handleRole);
     return () => window.removeEventListener('snns_role_updated', handleRole);
+  }, []);
+
+  // Sync real presence in Firestore for current user
+  useEffect(() => {
+    const profile = storage.getUserProfile();
+    connectService.syncUserPresence(profile);
+
+    const handleProfileUpdate = () => {
+      const updated = storage.getUserProfile();
+      connectService.syncUserPresence(updated);
+    };
+
+    window.addEventListener('snns_user_profile_updated', handleProfileUpdate);
+    return () => window.removeEventListener('snns_user_profile_updated', handleProfileUpdate);
   }, []);
 
   // Sync dynamic manifest for standalone PWA installation per app

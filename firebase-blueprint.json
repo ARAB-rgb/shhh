@@ -81,6 +81,67 @@
         }
       },
       "required": ["id", "query", "count"]
+    },
+    "UserProfileDoc": {
+      "title": "UserProfileDoc",
+      "description": "Registered SNNS user profile and live presence",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "User ID / Firebase UID" },
+        "name": { "type": "string", "description": "Full display name" },
+        "email": { "type": "string", "description": "Verified SNNS email" },
+        "snnsHandle": { "type": "string", "description": "SNNS username prefix" },
+        "roleAr": { "type": "string", "description": "Arabic role title" },
+        "departmentAr": { "type": "string", "description": "Arabic department name" },
+        "avatarInitials": { "type": "string", "description": "Initials for avatar" },
+        "avatarColor": { "type": "string", "description": "Tailwind color class for avatar" },
+        "isOnline": { "type": "boolean", "description": "Whether user is currently connected" },
+        "lastActive": { "type": "string", "description": "ISO timestamp of last activity heartbeat" },
+        "allowDiscovery": { "type": "boolean", "description": "Whether user allows discovery in Connect directory" }
+      },
+      "required": ["id", "name", "email", "lastActive"]
+    },
+    "ContactRelation": {
+      "title": "ContactRelation",
+      "description": "User contact relationship status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Target user ID" },
+        "targetUserId": { "type": "string", "description": "Target user ID" },
+        "targetName": { "type": "string", "description": "Target display name" },
+        "targetEmail": { "type": "string", "description": "Target email" },
+        "status": { "type": "string", "description": "Relationship status (pending_sent, pending_received, accepted, blocked)" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of relation update" }
+      },
+      "required": ["id", "targetUserId", "targetName", "targetEmail", "status", "updatedAt"]
+    },
+    "ConversationDoc": {
+      "title": "ConversationDoc",
+      "description": "1-on-1 private conversation thread",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Deterministic conversation ID (uid1_uid2)" },
+        "participantIds": { "type": "array", "description": "Array of participant user IDs", "items": { "type": "string" } },
+        "lastMessage": { "type": "string", "description": "Latest message text snippet" },
+        "lastMessageAt": { "type": "string", "description": "ISO timestamp of latest message" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of update" }
+      },
+      "required": ["id", "participantIds", "updatedAt"]
+    },
+    "ChatMessageDoc": {
+      "title": "ChatMessageDoc",
+      "description": "Direct chat message in a conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Message ID" },
+        "conversationId": { "type": "string", "description": "Parent conversation ID" },
+        "senderId": { "type": "string", "description": "Sender user ID" },
+        "senderName": { "type": "string", "description": "Sender display name" },
+        "text": { "type": "string", "description": "Message content" },
+        "timestamp": { "type": "string", "description": "ISO timestamp of message" },
+        "status": { "type": "string", "description": "Delivery status: sent, delivered, read" }
+      },
+      "required": ["id", "conversationId", "senderId", "senderName", "text", "timestamp"]
     }
   },
   "firestore": {
@@ -91,6 +152,22 @@
     "/queries/{queryId}": {
       "schema": "SearchQuery",
       "description": "Trending and autocomplete search query logs"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfileDoc",
+      "description": "Registered SNNS user profile and live presence"
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": "ContactRelation",
+      "description": "User contact list and relationship states"
+    },
+    "/conversations/{conversationId}": {
+      "schema": "ConversationDoc",
+      "description": "1-on-1 private conversation threads"
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": "ChatMessageDoc",
+      "description": "Direct chat messages within a conversation"
     }
   }
 }
