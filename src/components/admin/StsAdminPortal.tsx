@@ -71,17 +71,10 @@ export const StsAdminPortal: React.FC<StsAdminPortalProps> = ({
   // Check admin verification on mount
   useEffect(() => {
     const verify = async () => {
-      const isRoleAdmin =
-        currentUser.role === 'admin' ||
-        currentUser.role === 'owner' ||
-        currentUser.email === 'a@snns.pro';
-
-      if (isRoleAdmin) {
-        setIsVerified(true);
-      } else {
-        const res = await adminService.verifyAdminStatus();
-        setIsVerified(res.isVerifiedAdmin);
-      }
+      // Never grant administrative access from a browser-controlled role or email.
+      // The API must independently verify the authenticated user's privileges.
+      const res = await adminService.verifyAdminStatus();
+      setIsVerified(res.isVerifiedAdmin);
 
       // Fetch /api/sts/dashboard
       try {
