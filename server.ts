@@ -711,6 +711,14 @@ function requirePermission(permissionKey: keyof SupervisorPermissions) {
   };
 }
 
+// Safety gate: do not allow admin operations until trusted identity verification is deployed.
+// This is intentionally a temporary fail-closed measure, not a complete SSO implementation.
+app.use('/api/admin', (req, res, next) => {
+  if (req.path === '/gov-directory' && req.method === 'GET') return next();
+  if (req.path === '/verify' || req.path === '/login') return next();
+  return res.status(503).json({ error: 'ADMIN_AUTH_NOT_CONFIGURED' });
+});
+
 // ADMIN & GOVERNANCE REST API ENDPOINTS
 
 // 1. Verify Current User's Admin Status from Server
@@ -740,53 +748,12 @@ app.get('/api/admin/verify', (req, res) => {
 });
 
 // 2. Supervisor Login Verification
-app.post('/api/admin/login', (req, res) => {
-  const { email, passcode } = req.body;
-  if (!passcode && !email) {
-    return res.status(400).json({ error: 'الرجاء إدخال البريد أو رمز التحقق الإداري' });
-  }
-
-  const validCodes = ['snns2026', 'admin365', '1234', 'admin'];
-  if (passcode && validCodes.includes(passcode.trim().toLowerCase())) {
-    // If specific email provided, match supervisor or fallback to super_admin
-    const matched = email ? supervisorsDB.find((s) => s.email.toLowerCase() === email.trim().toLowerCase()) : null;
-    const supervisor = matched || supervisorsDB[0];
-
-    // Log the successful login
-    auditLogsDB.unshift({
-      id: `log-${Date.now()}`,
-      action: 'تسجيل دخول إداري',
-      actor: supervisor.name,
-      actorEmail: supervisor.email,
-      targetType: 'auth',
-      targetId: supervisor.id,
-      details: 'تم التحقق من الصلاحيات الإدارية بنجاح على الخادم.',
-      timestamp: new Date().toLocaleString('ar-SA'),
-    });
-
-    return res.json({
-      success: true,
-      isVerifiedAdmin: true,
-      supervisor,
-      permissions: supervisor.permissions,
-    });
-  }
-
-  if (email) {
-    const supervisor = supervisorsDB.find((s) => s.email.toLowerCase() === email.trim().toLowerCase());
-    if (supervisor && supervisor.status === 'active') {
-      return res.json({
-        success: true,
-        isVerifiedAdmin: true,
-        supervisor,
-        permissions: supervisor.permissions,
-      });
-    }
-  }
-
-  return res.status(401).json({
-    error: 'رمز التحقق الإداري غير صحيح أو الحساب لا يملك صلاحية إدارة.',
-    code: 'INVALID_CREDENTIALS',
+// Disabled until verified Firebase sessions and a protected admin allow-list are wired.
+// Never grant admin rights from a client-supplied email or a shared passcode.
+app.post('/api/admin/login', (_req, res) => {
+  return res.status(503).json({
+    error: 'ADMIN_AUTH_NOT_CONFIGURED',
+    message: 'تسجيل الإدارة معطل مؤقتًا حتى تفعيل التحقق الآمن من الهوية على الخادم.'
   });
 });
 
@@ -1690,6 +1657,9 @@ export function setupCallsAPI(appInstance: express.Express) {
 }
 
 setupCallsAPI(app);
+
+// Keep unknown API endpoints from falling through to the SPA index.html.
+app.use('/api', (_req, res) => res.status(404).json({ error: 'API_ROUTE_NOT_FOUND' }));
 
 // Vite or Static Serving
 if (process.env.NODE_ENV === 'production') {

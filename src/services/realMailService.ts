@@ -85,7 +85,7 @@ class RealMailService {
 
       if (statusCode === 401) {
         return {
-          connected: true, // Server is alive and correctly enforcing 401 authentication
+          connected: false, // 401 is not proof that a mailbox or IMAP/SMTP is connected
           statusCode: 401,
           statusText: 'UNAUTHENTICATED',
           error: 'يلزم تسجيل الدخول المعتمد للوصول إلى صندوق البريد (@snns.pro)',

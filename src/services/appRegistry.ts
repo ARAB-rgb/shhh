@@ -342,28 +342,9 @@ class AppRegistryService {
     } catch {}
   }
 
-  getUserTenantCompanies(userEmail?: string): TenantCompany[] {
-    const email = (userEmail || '').toLowerCase().trim();
-    
-    // Super admin (a@snns.pro) does NOT get automatic access to private organization data
-    if (email === 'a@snns.pro') {
-      return []; 
-    }
-
-    // Personal accounts or guests with no corporate links return []
-    if (!email || email.includes('guest') || email.includes('personal')) {
-      return [];
-    }
-
-    // Return only actual organizations where user is an authorized member
-    if (email.includes('htaf') || email === 'htaf@snns.pro') {
-      return [DEFAULT_TENANT_COMPANIES[0]];
-    } else if (email.includes('miller') || email.includes('security')) {
-      return [DEFAULT_TENANT_COMPANIES[1]];
-    } else if (email.includes('admin') || email.includes('owner')) {
-      return [DEFAULT_TENANT_COMPANIES[0], DEFAULT_TENANT_COMPANIES[1]];
-    }
-
+  getUserTenantCompanies(_userEmail?: string): TenantCompany[] {
+    // Membership is NOT derivable from a username, email substring, or localStorage.
+    // Until a server-verified membership API exists, display no tenant memberships.
     return [];
   }
 
