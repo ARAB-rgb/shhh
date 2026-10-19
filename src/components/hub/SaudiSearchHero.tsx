@@ -122,7 +122,7 @@ export const SaudiSearchHero: React.FC<SaudiSearchHeroProps> = ({
       className="w-full min-h-[85vh] flex flex-col items-center justify-center relative overflow-hidden rounded-3xl border border-amber-500/35 p-4 sm:p-8 shadow-2xl select-none bg-cover bg-center transition-all duration-500"
       style={{
         backgroundImage: bgMode === 'panorama'
-          ? `linear-gradient(to bottom, rgba(3, 7, 18, 0.78), rgba(3, 7, 18, 0.92)), url('${heroBg}')`
+          ? `url('${heroBg}')`
           : 'none',
         backgroundColor: bgMode === 'dark' ? '#030712' : undefined,
       }}
@@ -131,7 +131,7 @@ export const SaudiSearchHero: React.FC<SaudiSearchHeroProps> = ({
       <div className="absolute inset-2 sm:inset-4 rounded-[2.5rem] border border-amber-400/40 pointer-events-none shadow-[inset_0_0_60px_rgba(245,158,11,0.2)] z-20" />
       
       {/* Background Heritage Ambient Glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-600/20 via-emerald-950/50 to-slate-950 pointer-events-none" />
+      <div className="absolute inset-0 pointer-events-none" />
 
       <div className="relative z-30 w-full max-w-4xl flex flex-col items-center text-center">
         {/* 1. Compact National Leadership Ribbon Banner */}
