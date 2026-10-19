@@ -162,8 +162,8 @@ export const RoyalLeadershipBanner: React.FC<RoyalLeadershipBannerProps> = ({
           </span>
         </div>
 
-        {/* Three Compact Frames Row: Right (King Salman) - Center (Flag) - Left (Crown Prince) */}
-        <div className="grid grid-cols-3 gap-3 items-center justify-items-center">
+        {/* Three Royal Frames Row: Right (King Salman) - Center (Saudi Flag) - Left (Crown Prince) */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 items-center justify-items-center">
           {slotsConfig.map((slot) => {
             const currentSrc = images[slot.id];
             const isCenter = slot.id === 'center';
@@ -172,29 +172,33 @@ export const RoyalLeadershipBanner: React.FC<RoyalLeadershipBannerProps> = ({
             return (
               <div
                 key={slot.id}
-                className="flex items-center gap-1.5 text-start cursor-pointer group/item"
+                className="flex items-center gap-2 text-start cursor-pointer group/item relative"
                 onClick={() => setActiveEditingSlot(slot.id)}
                 title={isAr ? `انقر لتغيير ${slot.titleAr}` : `Click to change ${slot.titleEn}`}
               >
                 <div className="relative">
-                  <div className="absolute -inset-0.5 rounded-full bg-amber-400/50 blur-[1px] opacity-60 group-hover/item:opacity-100 transition" />
-                  <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-amber-400/80 bg-slate-900 overflow-hidden flex items-center justify-center shadow">
+                  <div className={`absolute -inset-1 rounded-full ${isCenter ? 'bg-emerald-400/60' : 'bg-amber-400/60'} blur-[2px] opacity-70 group-hover/item:opacity-100 transition animate-pulse`} />
+                  <div className={`relative w-11 h-11 sm:w-14 sm:h-14 rounded-full border-2 ${isCenter ? 'border-emerald-400 p-0.5' : 'border-amber-400 p-0.5'} bg-slate-900 overflow-hidden flex items-center justify-center shadow-lg transition-transform group-hover/item:scale-105`}>
                     {!hasError ? (
                       <img
                         src={currentSrc}
                         alt={slot.titleAr}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-full"
                         onError={() => setErrorStates((prev) => ({ ...prev, [slot.id]: true }))}
                       />
                     ) : (
-                      <RoyalCrownEmblemSvg className="w-6 h-6" />
+                      <RoyalCrownEmblemSvg className="w-8 h-8" />
                     )}
+                  </div>
+                  {/* Edit Badge overlay */}
+                  <div className="absolute -bottom-1 -end-1 bg-slate-900/90 border border-amber-400/80 rounded-full p-0.5 opacity-0 group-hover/item:opacity-100 transition shadow">
+                    <Edit3 className="w-2.5 h-2.5 text-amber-300" />
                   </div>
                 </div>
 
-                <div className="hidden sm:block">
-                  <p className="text-[10px] font-bold text-white leading-tight truncate max-w-[90px]">{slot.titleAr}</p>
-                  <p className="text-[9px] text-amber-400 font-medium leading-tight">{slot.badge}</p>
+                <div className="hidden md:block">
+                  <p className="text-[11px] font-bold text-white leading-tight truncate max-w-[110px]">{slot.titleAr}</p>
+                  <p className={`text-[9px] ${isCenter ? 'text-emerald-400 font-bold' : 'text-amber-400 font-medium'} leading-tight`}>{slot.badge}</p>
                 </div>
               </div>
             );
@@ -203,62 +207,127 @@ export const RoyalLeadershipBanner: React.FC<RoyalLeadershipBannerProps> = ({
 
         <button
           onClick={handleResetAll}
-          className="p-1 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded-lg transition text-[10px]"
-          title={isAr ? 'استعادة الافتراضي' : 'Reset'}
+          className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-amber-400 rounded-lg transition text-[10px] shrink-0"
+          title={isAr ? 'استعادة الصور الافتراضية' : 'Reset to default images'}
         >
-          <RotateCcw className="w-3 h-3" />
+          <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Edit Modal */}
       {activeEditingSlot && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-5 text-white text-start shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="font-bold text-xs flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full p-6 text-white text-start shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="font-bold text-sm flex items-center gap-2">
                 <Crown className="w-4 h-4 text-amber-400" />
-                <span>{isAr ? 'تخصيص الشعار الوطني' : 'Customize National Emblem'}</span>
+                <span>
+                  {isAr
+                    ? `تخصيص: ${slotsConfig.find((s) => s.id === activeEditingSlot)?.titleAr}`
+                    : `Customize: ${slotsConfig.find((s) => s.id === activeEditingSlot)?.titleEn}`}
+                </span>
               </h3>
-              <button onClick={() => setActiveEditingSlot(null)} className="text-slate-400 hover:text-white">
-                <X className="w-4 h-4" />
+              <button
+                onClick={() => setActiveEditingSlot(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
+              {/* Presets */}
               <div>
-                <label className="font-semibold block mb-1 text-slate-300">{isAr ? 'اختر نموذج جاهز:' : 'Select Preset:'}</label>
-                <div className="grid grid-cols-2 gap-2">
+                <label className="font-semibold block mb-2 text-slate-300">
+                  {isAr ? '1. اختر من الصور الوطنية المعتمدة:' : '1. Choose from official presets:'}
+                </label>
+                <div className="grid grid-cols-3 gap-2">
                   <button
+                    type="button"
                     onClick={() => handleApplyImage(activeEditingSlot, '/assets/images/saudi_leadership.jpg')}
-                    className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-center text-[10px] font-bold"
+                    className="p-2.5 bg-slate-800/90 hover:bg-slate-700 border border-slate-700/60 hover:border-amber-400 rounded-xl text-center flex flex-col items-center gap-1.5 transition"
                   >
-                    {isAr ? 'صورة القيادة' : 'Leadership Duo'}
+                    <div className="w-10 h-10 rounded-full border border-amber-400 overflow-hidden shadow">
+                      <img src="/assets/images/saudi_leadership.jpg" alt="القيادة" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-200">{isAr ? 'صورة القيادة' : 'Leadership'}</span>
                   </button>
+
                   <button
+                    type="button"
                     onClick={() => handleApplyImage(activeEditingSlot, '/assets/images/saudi_map_flag.svg')}
-                    className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-center text-[10px] font-bold"
+                    className="p-2.5 bg-slate-800/90 hover:bg-slate-700 border border-slate-700/60 hover:border-emerald-400 rounded-xl text-center flex flex-col items-center gap-1.5 transition"
                   >
-                    {isAr ? 'علم المملكة' : 'Saudi Flag'}
+                    <div className="w-10 h-10 rounded-full border border-emerald-400 overflow-hidden shadow bg-emerald-950/60">
+                      <img src="/assets/images/saudi_map_flag.svg" alt="خريطة العلم" className="w-full h-full object-cover p-1" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-200">{isAr ? 'خريطة العلم' : 'Flag Map'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyImage(activeEditingSlot, '/assets/images/saudi_flag.jpg')}
+                    className="p-2.5 bg-slate-800/90 hover:bg-slate-700 border border-slate-700/60 hover:border-emerald-400 rounded-xl text-center flex flex-col items-center gap-1.5 transition"
+                  >
+                    <div className="w-10 h-10 rounded-full border border-emerald-400 overflow-hidden shadow">
+                      <img src="/assets/images/saudi_flag.jpg" alt="العلم الخفاق" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-200">{isAr ? 'العلم الخفاق' : 'Saudi Flag'}</span>
                   </button>
                 </div>
               </div>
 
+              {/* Upload from Device */}
               <div>
-                <label className="font-semibold block mb-1 text-slate-300">{isAr ? 'أو أدخل رابط صورة مباشر (URL):' : 'Or Image URL:'}</label>
+                <label className="font-semibold block mb-2 text-slate-300">
+                  {isAr ? '2. أو ارفع صورة مباشرة من جهازك:' : '2. Or upload an image from your device:'}
+                </label>
+                <label className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-dashed border-slate-700 hover:border-amber-400 rounded-xl cursor-pointer hover:bg-slate-900/60 transition group">
+                  <Upload className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
+                  <span className="text-xs text-slate-300 group-hover:text-white font-medium">
+                    {isAr ? 'اختر ملف صورة (JPG, PNG, WebP)' : 'Select image file (JPG, PNG, WebP)'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const result = event.target?.result as string;
+                          if (result && activeEditingSlot) {
+                            handleApplyImage(activeEditingSlot, result);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              {/* Direct URL */}
+              <div>
+                <label className="font-semibold block mb-1 text-slate-300">
+                  {isAr ? '3. أو أدخل رابط صورة مباشر (URL):' : '3. Or enter direct image URL:'}
+                </label>
                 <input
-                  type="text"
+                  type="url"
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-white font-mono text-xs"
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-400 rounded-xl p-2.5 text-white font-mono text-xs focus:outline-none transition"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              {/* Actions */}
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setActiveEditingSlot(null)}
-                  className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-xl font-medium"
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition cursor-pointer"
                 >
                   {isAr ? 'إلغاء' : 'Cancel'}
                 </button>
@@ -267,9 +336,10 @@ export const RoyalLeadershipBanner: React.FC<RoyalLeadershipBannerProps> = ({
                   onClick={() => {
                     if (urlInput.trim()) handleApplyImage(activeEditingSlot, urlInput.trim());
                   }}
-                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl"
+                  disabled={!urlInput.trim()}
+                  className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl shadow transition cursor-pointer"
                 >
-                  {isAr ? 'تطبيق' : 'Apply'}
+                  {isAr ? 'تطبيق الرابط' : 'Apply URL'}
                 </button>
               </div>
             </div>

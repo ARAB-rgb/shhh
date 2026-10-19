@@ -1031,6 +1031,355 @@ app.post('/api/admin/review-queue/resolve', requirePermission('canReviewQueue'),
   return res.json({ success: true, item, queue: reviewQueueDB, auditLogs: auditLogsDB });
 });
 
+// ==========================================
+// CURATED PRIVATE DIRECTORY & CLOSED SEARCH
+// ==========================================
+export interface VerifiedLink {
+  id: string;
+  title: string;          // اسم الخدمة (مثال: منصة ناجز)
+  url: string;            // الرابط الرسمي الفعلي (https://najiz.sa)
+  description: string;    // وصف مختصر للخدمة
+  category: string;       // التصنيف (مثال: دوائر حكومية / وزارة العدل)
+  subCategory?: string;   // تصنيف فرعي (مثل: خدمات قضائية)
+  keywords: string[];     // الكلمات المفتاحية للبحث (ناجز, عدل, صكوك, وكالات)
+  addedBy: string;        // اسم/بريد المشرف الذي أضاف الرابط (Super Admin)
+  isVerified: boolean;    // حالة الاعتماد (True)
+  createdDate: string;
+}
+
+const verifiedDirectoryDB: VerifiedLink[] = [
+  {
+    id: 'vl-najiz',
+    title: 'منصة ناجز (وزارة العدل)',
+    url: 'https://najiz.sa',
+    description: 'بوابة الخدمات العدلية الموحدة: الوكالات، الصكوك، القضايا، التنفيذ، وتوثيق العقود العقارية.',
+    category: 'الدوائر الحكومية والعدلية',
+    subCategory: 'خدمات قضائية وتوثيق',
+    keywords: ['ناجز', 'عدل', 'وزارة العدل', 'صكوك', 'وكالات', 'افراغ', 'قضايا', 'توثيق', 'عقود', 'محاكم', 'تنفيذ'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-01',
+  },
+  {
+    id: 'vl-absher',
+    title: 'منصة أبشر (وزارة الداخلية)',
+    url: 'https://absher.sa',
+    description: 'المنصة الوطنية للخدمات الفردية والأعمال: تجديد الهوية، الجوازات، رخص السير، الإقامات، والتأشيرات.',
+    category: 'الداخلية والهوية الرقمية',
+    subCategory: 'الأحوال والجوازات والمرور',
+    keywords: ['ابشر', 'أبشر', 'تجديد رخصة', 'رخصة قيادة', 'جوازات', 'اقامة', 'إقامة', 'مرور', 'استمارة', 'نقل ملكية', 'تفويض'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-01',
+  },
+  {
+    id: 'vl-tawakkalna',
+    title: 'منصة توكلنا (سدايا SDAIA)',
+    url: 'https://tawakkalna.sdaia.gov.sa',
+    description: 'المنظومة الوطنية الشاملة للهوية الرقمية، الوثائق الرسمية، تذاكر الفعاليات، والمحفظة الرقمية.',
+    category: 'البيانات والذكاء الاصطناعي',
+    subCategory: 'الهوية والوثائق الرقمية',
+    keywords: ['توكلنا', 'سدايا', 'هوية رقمية', 'تصاريح', 'لوحة قيادة', 'وثائقي', 'المحفظة الرقمية'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-01',
+  },
+  {
+    id: 'vl-qiwa',
+    title: 'منصة قوى (وزارة الموارد البشرية)',
+    url: 'https://qiwa.sa',
+    description: 'المنصة الموحدة لإدارة سوق العمل في المملكة: توثيق عقود العمل، نقل الخدمات، التأشيرات المهنية، ونطاقات.',
+    category: 'العمل والتوظيف والشركات',
+    subCategory: 'عقود وتأشيرات العمل',
+    keywords: ['قوى', 'عقد عمل', 'توثيق عقود', 'تأشيرات عمل', 'نطاقات', 'نقل كفالة', 'موارد بشرية', 'مكتب العمل'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-05',
+  },
+  {
+    id: 'vl-balady',
+    title: 'منصة بلدي (وزارة الشؤون البلدية والقروية)',
+    url: 'https://balady.gov.sa',
+    description: 'بوابة الخدمات البلدية الموحدة: رخص البناء، الرخص التجارية الفورية، الشهادات الصحية، وإشغال الأرصفة.',
+    category: 'البلديات والتراخيص المكانية',
+    subCategory: 'تراخيص بلدية وإنشائية',
+    keywords: ['بلدي', 'رخصة تجارية', 'رخصة بناء', 'بلدية', 'امانة', 'أمانة', 'شهادة صحية', 'لوحات تجارية', 'تصريح نشاط'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-10',
+  },
+  {
+    id: 'vl-zatca',
+    title: 'هيئة الزكاة والضريبة والجمارك (ZATCA)',
+    url: 'https://zatca.gov.sa',
+    description: 'البوابة الرسمية للفاتورة الإلكترونية (فاتورة)، إقرارات ضريبة القيمة المضافة، والخدمات الجمركية.',
+    category: 'المالية والضرائب والجمارك',
+    subCategory: 'الفوترة والضريبة',
+    keywords: ['زكاة', 'ضريبة', 'جمارك', 'فاتورة الكترونية', 'فاتورة', 'قيمة مضافة', 'ضريبة الدخل', 'استيراد'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-12',
+  },
+  {
+    id: 'vl-saber',
+    title: 'منصة سابر (الهيئة السعودية للمواصفات SASO)',
+    url: 'https://saber.sa',
+    description: 'المنصة الإلكترونية لتسجيل وشهادات مطابقة المنتجات الاستهلاكية المعتمدة قبل دخول السوق السعودي.',
+    category: 'التجارة والمواصفات والجودة',
+    subCategory: 'شهادات المطابقة',
+    keywords: ['سابر', 'شهادة مطابقة', 'ساسو', 'مواصفات', 'جمارك', 'منتجات', 'شهادة ارسال'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-15',
+  },
+  {
+    id: 'vl-etimad',
+    title: 'منصة اعتماد (وزارة المالية)',
+    url: 'https://etimad.sa',
+    description: 'المنصة الوطنية للمشتريات والمنافسات الحكومية والمطالبات المالية وصرف المستحقات.',
+    category: 'المالية والضرائب والجمارك',
+    subCategory: 'منافسات ومشتريات حكومية',
+    keywords: ['اعتماد', 'مناقصات', 'مشتريات حكومية', 'مطالبات مالية', 'عقود حكومية', 'وزارة المالية'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-18',
+  },
+  {
+    id: 'vl-madrasati',
+    title: 'منصة مدرستي (وزارة التعليم)',
+    url: 'https://madrasati.sa',
+    description: 'المنصة الوطنية الرسمية للتعليم الرقمي العام، المناهج التفاعلية، الفصول الافتراضية والاختبارات.',
+    category: 'التعليم والتدريب',
+    subCategory: 'التعليم العام',
+    keywords: ['مدرستي', 'تعليم', 'مدارس', 'واجبات', 'فصول', 'اختبارات', 'نظام نور', 'معلم'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-20',
+  },
+  {
+    id: 'vl-sehhaty',
+    title: 'منصة صحتي (وزارة الصحة)',
+    url: 'https://sehhaty.sa',
+    description: 'البوابة الموحدة للرعاية الصحية في المملكة: حجز المواعيد في المراكز، استعراض الوصفات، والتقارير الطبية.',
+    category: 'الصحة والوقاية',
+    subCategory: 'الرعاية الصحية والمواعيد',
+    keywords: ['صحتي', 'موعد مستشفى', 'وزارة الصحة', 'استشارة طبية', 'وصفة', 'اجازة مرضية', 'إجازة مرضية'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-22',
+  },
+  {
+    id: 'vl-business',
+    title: 'المركز السعودي للأعمال (SBC)',
+    url: 'https://business.sa',
+    description: 'منصة موحدة لتأسيس الشركات والمنشآت التجارية، إصدار وتعديل السجلات التجارية والغرف التجارية.',
+    category: 'التجارة والمواصفات والجودة',
+    subCategory: 'تأسيس الأعمال والسجلات',
+    keywords: ['سجل تجاري', 'تأسيس شركة', 'المركز السعودي للاعمال', 'وزارة التجارة', 'اسم تجاري', 'غرفة تجارية'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-25',
+  },
+  {
+    id: 'vl-ehsan',
+    title: 'المنصة الوطنية للعمل الخيري (إحسان)',
+    url: 'https://ehsan.sa',
+    description: 'المنصة الوطنية المعتمدة لتقديم التبرعات والصدقات والمشاريع التنموية والخيرية الموثوقة.',
+    category: 'القطاع غير الربحي والخيري',
+    subCategory: 'تبرعات وعطاء',
+    keywords: ['احسان', 'إحسان', 'تبرع', 'فرجت', 'زكاة الفطر', 'صدقة', 'كفالة أيتام'],
+    addedBy: 'Super Admin',
+    isVerified: true,
+    createdDate: '2026-01-28',
+  },
+];
+
+// 1. Closed Internal Search API
+app.get('/api/directory/search', (req, res) => {
+  const query = String(req.query.q || '').trim().toLowerCase();
+  if (!query) {
+    return res.json({
+      success: true,
+      query: '',
+      results: verifiedDirectoryDB.slice(0, 8),
+      totalCount: verifiedDirectoryDB.length,
+    });
+  }
+
+  // Matching against title, keywords, category, subCategory, description
+  const cleanTerms = query.split(/\s+/).filter(Boolean);
+
+  const matched = verifiedDirectoryDB.filter((item) => {
+    const titleMatch = item.title.toLowerCase().includes(query);
+    const descMatch = item.description.toLowerCase().includes(query);
+    const catMatch =
+      item.category.toLowerCase().includes(query) ||
+      (item.subCategory && item.subCategory.toLowerCase().includes(query));
+    const keywordMatch = item.keywords.some(
+      (k) =>
+        k.toLowerCase().includes(query) ||
+        cleanTerms.some((t) => k.toLowerCase().includes(t) || t.includes(k.toLowerCase()))
+    );
+
+    return titleMatch || descMatch || catMatch || keywordMatch;
+  });
+
+  if (matched.length === 0) {
+    return res.json({
+      success: true,
+      found: false,
+      query,
+      results: [],
+      message: 'عذراً، هذه الخدمة غير مفهرسة في الدليل المعتمد. يمكنك رفع طلب إضافتها للإدارة.',
+    });
+  }
+
+  return res.json({
+    success: true,
+    found: true,
+    query,
+    results: matched,
+    totalCount: matched.length,
+  });
+});
+
+// 2. Directory Listing
+app.get('/api/directory/links', (_req, res) => {
+  return res.json({
+    success: true,
+    links: verifiedDirectoryDB,
+    totalCount: verifiedDirectoryDB.length,
+  });
+});
+
+// 3. Add Verified Link (Protected for STS Super Admin)
+app.post('/api/directory/links', (req, res) => {
+  const admin = resolveAdminUser(req);
+  const user = req.body?.currentUser;
+  const isAuth = Boolean(admin || (user && (user.isAdmin || user.role === 'admin' || user.email === 'a@snns.pro')));
+
+  if (!isAuth) {
+    return res.status(403).json({ error: 'عذراً، إضافة الروابط محصورة حصراً بالسوبر أدمن ومسؤولي النظام' });
+  }
+
+  const { title, url, description, category, subCategory, keywords } = req.body;
+  if (!title || !url) {
+    return res.status(400).json({ error: 'اسم الخدمة ورابطها المباشر مطلوبان' });
+  }
+
+  const newLink: VerifiedLink = {
+    id: `vl-${Date.now()}`,
+    title: String(title).trim(),
+    url: String(url).trim(),
+    description: description ? String(description).trim() : 'خدمة وطنية معتمدة وموثقة',
+    category: category ? String(category).trim() : 'خدمات عامة',
+    subCategory: subCategory ? String(subCategory).trim() : undefined,
+    keywords: Array.isArray(keywords)
+      ? keywords.map(String).map((k) => k.trim()).filter(Boolean)
+      : String(keywords || '')
+          .split(/[,،]/)
+          .map((k) => k.trim())
+          .filter(Boolean),
+    addedBy: admin?.name || user?.name || 'Super Admin (a@snns.pro)',
+    isVerified: true,
+    createdDate: new Date().toISOString().split('T')[0],
+  };
+
+  verifiedDirectoryDB.unshift(newLink);
+
+  auditLogsDB.unshift({
+    id: `log-${Date.now()}`,
+    action: 'إضافة رابط معتمد إلى الفهرس الخاص',
+    actor: newLink.addedBy,
+    actorEmail: admin?.email || user?.email || 'a@snns.pro',
+    targetType: 'verified_directory',
+    targetId: newLink.id,
+    details: `تم توثيق وإضافة [${newLink.title}] برابط معتمد (${newLink.url}).`,
+    timestamp: new Date().toLocaleString('ar-SA'),
+  });
+
+  return res.json({ success: true, link: newLink, links: verifiedDirectoryDB });
+});
+
+// 4. Update Verified Link
+app.put('/api/directory/links/:id', (req, res) => {
+  const admin = resolveAdminUser(req);
+  const user = req.body?.currentUser;
+  const isAuth = Boolean(admin || (user && (user.isAdmin || user.role === 'admin' || user.email === 'a@snns.pro')));
+
+  if (!isAuth) {
+    return res.status(403).json({ error: 'غير مصرح بتعديل الروابط' });
+  }
+
+  const { id } = req.params;
+  const target = verifiedDirectoryDB.find((l) => l.id === id);
+  if (!target) return res.status(404).json({ error: 'الرابط غير موجود' });
+
+  const { title, url, description, category, subCategory, keywords } = req.body;
+  if (title) target.title = String(title).trim();
+  if (url) target.url = String(url).trim();
+  if (description) target.description = String(description).trim();
+  if (category) target.category = String(category).trim();
+  if (subCategory !== undefined) target.subCategory = subCategory ? String(subCategory).trim() : undefined;
+  if (keywords) {
+    target.keywords = Array.isArray(keywords)
+      ? keywords.map(String).map((k) => k.trim()).filter(Boolean)
+      : String(keywords)
+          .split(/[,،]/)
+          .map((k) => k.trim())
+          .filter(Boolean);
+  }
+
+  return res.json({ success: true, link: target, links: verifiedDirectoryDB });
+});
+
+// 5. Delete Verified Link
+app.delete('/api/directory/links/:id', (req, res) => {
+  const admin = resolveAdminUser(req);
+  const user = req.body?.currentUser;
+  const isAuth = Boolean(admin || (user && (user.isAdmin || user.role === 'admin' || user.email === 'a@snns.pro')));
+
+  if (!isAuth) {
+    return res.status(403).json({ error: 'غير مصرح بحذف الروابط' });
+  }
+
+  const { id } = req.params;
+  const idx = verifiedDirectoryDB.findIndex((l) => l.id === id);
+  if (idx !== -1) {
+    const removed = verifiedDirectoryDB.splice(idx, 1)[0];
+    return res.json({ success: true, removed, links: verifiedDirectoryDB });
+  }
+  return res.status(404).json({ error: 'الرابط غير موجود' });
+});
+
+// 6. User submission request for an unindexed link
+app.post('/api/directory/request', (req, res) => {
+  const { title, requestedUrl, category, userEmail, notes } = req.body;
+  if (!title) return res.status(400).json({ error: 'يرجى كتابة اسم الخدمة المطلوبة' });
+
+  const newItem: ReviewQueueItem = {
+    id: `req-${Date.now()}`,
+    entityId: `vl-req-${Date.now()}`,
+    entityType: 'gov_entity',
+    title: String(title).trim(),
+    actionType: 'create',
+    details: `طلب إضافة خدمة للدليل المغلق: ${title} (${requestedUrl || 'بدون رابط مباشر'})`,
+    payload: { title, requestedUrl, category, userEmail, notes },
+    submittedBy: userEmail || 'مستخدم المنظومة',
+    status: 'pending',
+    reviewNotes: notes || 'طلب إضافة خدمة للدليل المغلق',
+    timestamp: new Date().toISOString(),
+  };
+
+  reviewQueueDB.unshift(newItem);
+
+  return res.json({
+    success: true,
+    message: 'تم استلام طلبك بنجاح، ورفعه لقائمة مراجعة الإدارة العليا لفهرسته في الدليل المعتمد.',
+    requestId: newItem.id,
+  });
+});
+
 app.get('/api/admin/audit-logs', (_req, res) => {
   return res.json({ logs: auditLogsDB });
 });
