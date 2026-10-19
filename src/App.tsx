@@ -578,7 +578,7 @@ export default function App() {
             )}
 
             {currentApp === 'snns-calls' && (
-              <SnnsCallsApp onBack={() => handleSelectApp(null)} lang={lang} />
+              <TeamsApp onBack={() => handleSelectApp(null)} lang={lang} initialTab="calls" />
             )}
 
             {currentApp === 'skype' && (

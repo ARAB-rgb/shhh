@@ -46,6 +46,13 @@ export interface ConnectContact {
   updatedAt: string;
 }
 
+export interface ConnectAttachment {
+  name: string;
+  size: number;
+  type: string;
+  dataUrl?: string;
+}
+
 export interface ConnectMessage {
   id: string;
   conversationId: string;
@@ -55,6 +62,7 @@ export interface ConnectMessage {
   timestamp: string;
   status: 'sent' | 'delivered' | 'read';
   callRoomUrl?: string; // Optional call link (SNNS.SITE)
+  attachment?: ConnectAttachment;
 }
 
 export interface ConnectConversation {
@@ -435,9 +443,10 @@ class ConnectService {
     conversationId: string,
     sender: { id: string; name: string },
     text: string,
-    callRoomUrl?: string
+    callRoomUrl?: string,
+    attachment?: ConnectAttachment
   ): Promise<ConnectMessage> {
-    if (!text.trim() && !callRoomUrl) {
+    if (!text.trim() && !callRoomUrl && !attachment) {
       throw new Error('لا يمكن إرسال رسالة فارغة.');
     }
 
@@ -455,6 +464,7 @@ class ConnectService {
       timestamp: now,
       status: 'sent',
       callRoomUrl,
+      ...(attachment ? { attachment } : {}),
     };
 
     // 1. Write message to Firestore subcollection
@@ -463,7 +473,7 @@ class ConnectService {
     // 2. Update conversation summary
     const convRef = doc(db, 'conversations', conversationId);
     await updateDoc(convRef, {
-      lastMessage: text.trim() || 'دعوة مكالمة SNNS',
+      lastMessage: text.trim() || (attachment ? `📎 ${attachment.name}` : 'دعوة مكالمة SNNS'),
       lastMessageAt: now,
       updatedAt: now,
     });

@@ -52,39 +52,40 @@ export const DEFAULT_TENANT_COMPANIES: TenantCompany[] = [
 ];
 
 export const APP_REGISTRY: AppRegistryItem[] = [
-  // 1. SNNS Calls
-  {
-    id: 'snns-calls',
-    nameAr: 'SNNS Calls',
-    nameEn: 'SNNS Calls',
-    taglineAr: 'المكالمات والاجتماعات الصوتية والمرئية المشفرة',
-    taglineEn: 'Encrypted HD voice & video meetings',
-    category: 'communications',
-    badge: 'مكالمات HD',
-    badgeColor: 'bg-sky-500 text-white',
-    iconName: 'calls',
-    pwaPath: '/?app=snns-calls',
-    manifestUrl: '/manifest-calls.json',
-    standaloneInstallable: true,
-    status: 'active',
-    order: 1,
-  },
-  // 2. SNNS Chat
+  // 1. SNNS Connect (Unified Communications: Chats, HD Calls, Contacts & Meetings)
   {
     id: 'snns-chat',
-    nameAr: 'SNNS Chat',
-    nameEn: 'SNNS Chat',
-    taglineAr: 'المحادثات الفورية والقنوات المؤسسية',
-    taglineEn: 'Instant team channels & direct messaging',
+    nameAr: 'SNNS Connect',
+    nameEn: 'SNNS Connect',
+    taglineAr: 'المحادثات الفورية والمكالمات والاجتماعات الموحدة',
+    taglineEn: 'Unified chats, HD voice/video calls & meetings',
     category: 'communications',
-    badge: 'تواصل فوري',
-    badgeColor: 'bg-indigo-500 text-white',
+    badge: 'تطبيق موحد',
+    badgeColor: 'bg-indigo-600 text-white',
     iconName: 'chat',
     pwaPath: '/?app=snns-chat',
     manifestUrl: '/manifest-chat.json',
     standaloneInstallable: true,
     status: 'active',
+    order: 1,
+  },
+  // 2. SNNS Calls (Underlying WebRTC Engine & Direct SNNS.SITE Hub - Unified under SNNS Connect)
+  {
+    id: 'snns-calls',
+    nameAr: 'SNNS Calls (محرك الاتصال)',
+    nameEn: 'SNNS Calls (Direct Hub)',
+    taglineAr: 'المكالمات والاجتماعات الصوتية والمرئية المشفرة عبر https://snns.site',
+    taglineEn: 'Encrypted HD voice & video meetings via https://snns.site',
+    category: 'communications',
+    badge: 'SNNS.SITE',
+    badgeColor: 'bg-sky-500 text-white',
+    iconName: 'calls',
+    pwaPath: '/?app=snns-calls',
+    manifestUrl: '/manifest-calls.json',
+    standaloneInstallable: true,
+    status: 'ready_for_connection',
     order: 2,
+    hiddenFromLauncher: true, // Unified under SNNS Connect in launcher view
   },
   // 3. SNNS Mail
   {

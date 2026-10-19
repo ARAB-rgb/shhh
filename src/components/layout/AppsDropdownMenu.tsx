@@ -188,6 +188,11 @@ export const AppsDropdownMenu: React.FC<AppsDropdownMenuProps> = ({
         return false;
       }
 
+      // Hide secondary engines (like snns-calls) unified under SNNS Connect
+      if (app.status === 'ready_for_connection' || app.hiddenFromLauncher) {
+        return false;
+      }
+
       // 2. Category filter
       if (selectedCategory !== 'all' && app.category !== selectedCategory) {
         return false;

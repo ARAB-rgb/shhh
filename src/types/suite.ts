@@ -418,5 +418,6 @@ export interface AppRegistryItem {
   requiredRole?: UserRoleType[];
   status: 'active' | 'ready_for_connection' | 'in_development';
   order: number;
+  hiddenFromLauncher?: boolean;
 }
 
