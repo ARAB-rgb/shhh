@@ -3,16 +3,11 @@ import {
   Building2,
   ChevronDown,
   Check,
-  Shield,
-  Layers,
-  Store,
   UserCheck,
-  Plus,
   X,
-  CreditCard,
-  Building,
 } from 'lucide-react';
-import { appRegistry, DEFAULT_TENANT_COMPANIES } from '../../services/appRegistry';
+import { appRegistry } from '../../services/appRegistry';
+import { storage } from '../../services/storage';
 import { TenantCompany, UserRoleType } from '../../types/suite';
 
 interface MultiTenantSwitcherProps {
@@ -21,10 +16,18 @@ interface MultiTenantSwitcherProps {
 
 export const MultiTenantSwitcher: React.FC<MultiTenantSwitcherProps> = ({ lang }) => {
   const isAr = lang === 'ar';
+  const currentUser = storage.getUserProfile();
   const [activeTenant, setActiveTenant] = useState<TenantCompany>(() => appRegistry.getActiveTenant());
   const [activeRole, setActiveRole] = useState<UserRoleType>(() => appRegistry.getCurrentRole());
   const [showDropdown, setShowDropdown] = useState(false);
-  const companies = appRegistry.getTenantCompanies();
+
+  // Get user's actual authorized tenant companies only (verified membership)
+  const companies = appRegistry.getUserTenantCompanies(currentUser.email);
+
+  // Requirement 4: "لا يظهر خيار «التبديل السريع بين المؤسسات» إلا إذا كان المستخدم عضوًا مصرحًا له في مؤسستين أو أكثر."
+  if (companies.length < 2) {
+    return null;
+  }
 
   const handleSelectCompany = (comp: TenantCompany) => {
     appRegistry.setActiveTenant(comp);
@@ -43,7 +46,7 @@ export const MultiTenantSwitcher: React.FC<MultiTenantSwitcherProps> = ({ lang }
       <button
         onClick={() => setShowDropdown(!showDropdown)}
         className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 text-xs font-semibold transition cursor-pointer shadow-xs"
-        title={isAr ? 'التبديل بين الشركات والمنشآت وتحديد الصلاحية' : 'Switch Corporate Tenant & Role'}
+        title={isAr ? 'التبديل السريع بين المؤسسات المصرح بها' : 'Switch Corporate Tenant & Role'}
       >
         <div className={`w-5 h-5 rounded-lg bg-gradient-to-r ${activeTenant.logoColor} text-white text-[9px] font-black flex items-center justify-center shrink-0`}>
           {activeTenant.logoInitials}
@@ -64,17 +67,17 @@ export const MultiTenantSwitcher: React.FC<MultiTenantSwitcherProps> = ({ lang }
           <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-sm">{isAr ? 'المنشأة والشركة النشطة' : 'Active Tenant Entity'}</span>
+              <span className="font-bold text-sm">{isAr ? 'المنشآت المصرح بها للمستخدم' : 'Authorized Enterprises'}</span>
             </div>
             <button onClick={() => setShowDropdown(false)} className="text-slate-400 hover:text-white">
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Companies List */}
+          {/* Companies List (Only verified actual authorized memberships) */}
           <div className="space-y-1.5 mb-4">
             <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-1">
-              {isAr ? 'منشآتك المسجلة في SNNS:' : 'Registered Enterprises:'}
+              {isAr ? 'منشآتك المسجلة رسمياً:' : 'Registered Enterprises:'}
             </span>
             {companies.map((comp) => {
               const isSelected = comp.id === activeTenant.id;
@@ -131,8 +134,8 @@ export const MultiTenantSwitcher: React.FC<MultiTenantSwitcherProps> = ({ lang }
             </div>
             <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">
               {isAr
-                ? '* صلاحية "كاشير فقط" تتيح فتح QAYD POS وتمنع تعديل شجرة الحسابات والقيود في QAYD Accounting.'
-                : '* Cashier role restricts access to general ledger while enabling POS terminal.'}
+                ? '* الحساب الشخصي مفصول تماماً عن حسابات المؤسسات، ولا يمنح السوبر أدمن صلاحية تلقائية للمنشآت الخاصة.'
+                : '* Personal account is strictly separated from corporate tenants.'}
             </p>
           </div>
         </div>

@@ -676,23 +676,10 @@ function isSafeUrl(url: string): boolean {
 }
 
 // Authentication & Permission Verification Helper
-function resolveAdminUser(req: express.Request): SupervisorAccount | null {
-  const emailHeader = (req.headers['x-admin-email'] || req.headers['x-user-email'] || req.query.userEmail) as string;
-  const adminCode = (req.headers['x-admin-passcode'] || req.query.adminCode) as string;
-
-  // Verify by admin passcode if provided
-  if (adminCode && ['snns2026', 'admin365', '1234', 'admin'].includes(adminCode.trim().toLowerCase())) {
-    // Return super_admin account
-    return supervisorsDB[0];
-  }
-
-  if (emailHeader) {
-    const found = supervisorsDB.find(
-      (s) => s.email.toLowerCase() === emailHeader.trim().toLowerCase() && s.status === 'active'
-    );
-    if (found) return found;
-  }
-
+function resolveAdminUser(_req: express.Request): SupervisorAccount | null {
+  // SECURITY: Legacy passcodes and user-supplied email are NOT authentication.
+  // A trusted server-side identity verifier and protected admin membership store
+  // must be integrated before enabling privileged routes.
   return null;
 }
 
@@ -1501,169 +1488,59 @@ Context provided: ${context || 'None'}`;
 });
 
 // ==========================================
-// INTERNAL CORPORATE MAIL API (@snns.pro)
+// REAL MAIL: fail closed until a verified backend is configured.
+// Never invent messages or return a successful send from process memory.
+// The VPS at api.snns.pro currently exposes /api/mail/status only;
+// this project cannot turn that into an IMAP/SMTP API by proxying to it.
 // ==========================================
-interface InternalMessage {
-  id: string;
-  sender: string;
-  senderName?: string;
-  recipient: string;
-  subject: string;
-  body: string;
-  timestamp: string;
-  read: boolean;
-}
+const VPS_MAIL_API_BASE = (process.env.VPS_MAIL_API_URL || '').replace(/\/$/, '');
+const MAIL_PROXY_ENABLED = process.env.SNNS_MAIL_PROXY_ENABLED === 'true';
 
-const internalMessagesDB: InternalMessage[] = [
-  {
-    id: 'mail-init-1',
-    sender: 's.miller@snns.pro',
-    senderName: 'Sarah Miller',
-    recipient: 'htaf@snns.pro',
-    subject: 'Welcome to SNNS 365 Cloud Productivity Workspace!',
-    body: 'مرحباً بك في مساحة عمل وتطبيقات SNNS 365 السحابية المتكاملة.\n\nيسعدنا انضمامك إلى منظومتنا، يمكنك مراسلة أي حساب ينتهي بنطاق @snns.pro بشكل فوري ومباشر.',
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-    read: false,
-  },
-  {
-    id: 'mail-init-2',
-    sender: 'security@snns.pro',
-    senderName: 'SNNS Security Vault',
-    recipient: 'htaf@snns.pro',
-    subject: 'تأكيد أمان وتفعيل خادم البريد المعتمد @snns.pro',
-    body: 'تم تفعيل خادم البريد الداخلي الآمن (@snns.pro) بنجاح مع تشفير الرسائل ودعم الإرسال والاستقبال الفوري بين جميع أعضاء المؤسسة.',
-    timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-    read: true,
-  },
-];
-
-// ==========================================
-// VPS REAL MAIL PROXY ROUTER (/api/mail/*)
-// Forwards requests to https://api.snns.pro (Postfix + Dovecot Node API)
-// Passes Authorization Bearer Firebase ID Token directly to VPS
-// Returns authentic server responses & real HTTP status codes
-// ==========================================
-const VPS_MAIL_API_BASE = process.env.VPS_MAIL_API_URL || 'https://api.snns.pro';
-
-app.all('/api/mail/*', async (req, res) => {
-  const targetUrl = `${VPS_MAIL_API_BASE}${req.originalUrl}`;
-
-  try {
-    const headers: Record<string, string> = {
-      'Content-Type': (req.headers['content-type'] as string) || 'application/json',
-      'Accept': 'application/json, text/plain, */*',
-    };
-
-    if (req.headers.authorization) {
-      headers['Authorization'] = req.headers.authorization as string;
-    }
-
-    const fetchOptions: RequestInit = {
-      method: req.method,
-      headers,
-    };
-
-    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body && Object.keys(req.body).length > 0) {
-      fetchOptions.body = JSON.stringify(req.body);
-    }
-
-    const vpsRes = await fetch(targetUrl, fetchOptions);
-    const contentType = vpsRes.headers.get('content-type') || '';
-
-    if (contentType.includes('application/json')) {
-      const data = await vpsRes.json();
-      return res.status(vpsRes.status).json(data);
-    } else {
-      const text = await vpsRes.text();
-      return res.status(vpsRes.status).send(text);
-    }
-  } catch (err: any) {
-    console.error(`VPS Mail Proxy Error (${targetUrl}):`, err?.message || err);
-    return res.status(502).json({
-      error: 'VPS_GATEWAY_ERROR',
-      message: 'تعذر الاتصال بخادم البريد VPS https://api.snns.pro',
-      details: err?.message || String(err),
-      targetUrl,
+app.use(['/api/mail', '/api/internal-mail'], async (req, res) => {
+  if (!req.headers.authorization?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'UNAUTHENTICATED' });
+  }
+  if (!MAIL_PROXY_ENABLED || !VPS_MAIL_API_BASE) {
+    return res.status(503).json({
+      error: 'MAIL_BACKEND_NOT_CONFIGURED',
+      message: 'خدمة البريد الحقيقي غير مربوطة بعد. لم يتم عرض رسائل وهمية أو إرسالها.'
     });
   }
-});
-
-// 1. Send Internal Email
-app.post('/api/internal-mail/send', (req, res) => {
-  const { sender, senderName, recipient, subject, body } = req.body;
-
-  if (!sender || !recipient || !subject) {
-    return res.status(400).json({ error: 'المرسل والمستقبل وعنوان الرسالة حقول أساسية.' });
+  // Security: the upstream must validate the bearer token and derive mailbox
+  // ownership from the verified identity. Forwarding a token alone is insufficient.
+  let upstream: URL;
+  try {
+    upstream = new URL(VPS_MAIL_API_BASE);
+    if (upstream.protocol !== 'https:' || upstream.username || upstream.password) throw Error('Invalid upstream');
+    const selfHost = (req.headers.host || '').split(':')[0].toLowerCase();
+    if (upstream.hostname.toLowerCase() === selfHost) {
+      return res.status(503).json({ error: 'MAIL_PROXY_LOOP_PREVENTED' });
+    }
+  } catch {
+    return res.status(503).json({ error: 'INVALID_MAIL_BACKEND' });
   }
-
-  const senderEmail = String(sender).trim().toLowerCase();
-  const recipientEmail = String(recipient).trim().toLowerCase();
-
-  // Validate internal @snns.pro domain
-  if (!recipientEmail.endsWith('@snns.pro') || !senderEmail.endsWith('@snns.pro')) {
-    return res.status(400).json({ error: 'البريد الداخلي مخصص فقط لنطاق @snns.pro' });
+  const pathAndQuery = req.originalUrl;
+  const target = `${upstream.origin}${pathAndQuery}`;
+  try {
+    const upstreamResponse = await fetch(target, {
+      method: req.method,
+      headers: {
+        Authorization: req.headers.authorization,
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      ...(req.method === 'GET' || req.method === 'HEAD' ? {} : { body: JSON.stringify(req.body ?? {}) }),
+      signal: AbortSignal.timeout(12000)
+    });
+    const responseType = upstreamResponse.headers.get('content-type') || '';
+    if (!responseType.includes('application/json')) {
+      return res.status(502).json({ error: 'MAIL_UPSTREAM_NON_JSON' });
+    }
+    const result = await upstreamResponse.json();
+    return res.status(upstreamResponse.status).json(result);
+  } catch {
+    return res.status(502).json({ error: 'MAIL_UPSTREAM_UNAVAILABLE' });
   }
-
-  const newMessage: InternalMessage = {
-    id: `msg-${Date.now()}`,
-    sender: senderEmail,
-    senderName: senderName || senderEmail.split('@')[0],
-    recipient: recipientEmail,
-    subject: String(subject).trim(),
-    body: String(body || '').trim(),
-    timestamp: new Date().toISOString(),
-    read: false,
-  };
-
-  internalMessagesDB.unshift(newMessage);
-  return res.status(201).json({
-    success: true,
-    message: 'تم إرسال البريد الداخلي بنجاح عبر خادم @snns.pro',
-    data: newMessage,
-  });
-});
-
-// 2. Get Inbox for user (Strict privacy enforcement: only recipient's mail is returned)
-app.get('/api/internal-mail/inbox/:email', (req, res) => {
-  const email = decodeURIComponent(req.params.email).trim().toLowerCase();
-  if (!email || !email.endsWith('@snns.pro')) {
-    return res.status(400).json({ error: 'صيغة البريد غير صحيحة لنطاق @snns.pro' });
-  }
-  const inbox = internalMessagesDB.filter(
-    (msg) => msg.recipient.toLowerCase() === email
-  );
-  return res.json(inbox);
-});
-
-// 3. Get Sent messages for user
-app.get('/api/internal-mail/sent/:email', (req, res) => {
-  const email = decodeURIComponent(req.params.email).trim().toLowerCase();
-  const sent = internalMessagesDB.filter(
-    (msg) => msg.sender.toLowerCase() === email
-  );
-  return res.json(sent);
-});
-
-// 4. Mark message as read
-app.patch('/api/internal-mail/read/:id', (req, res) => {
-  const { id } = req.params;
-  const msg = internalMessagesDB.find((m) => m.id === id);
-  if (msg) {
-    msg.read = true;
-    return res.json({ success: true });
-  }
-  return res.status(404).json({ error: 'الرسالة غير موجودة' });
-});
-
-// 5. Delete internal message
-app.delete('/api/internal-mail/:id', (req, res) => {
-  const { id } = req.params;
-  const index = internalMessagesDB.findIndex((m) => m.id === id);
-  if (index !== -1) {
-    internalMessagesDB.splice(index, 1);
-    return res.json({ success: true });
-  }
-  return res.status(404).json({ error: 'الرسالة غير موجودة' });
 });
 
 // ==========================================
@@ -1674,13 +1551,8 @@ const stsRouter = express.Router();
 // حماية مسار الادمن (Middleware)
 const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const supervisor = resolveAdminUser(req);
-  const user = req.body?.currentUser;
-
-  if (
-    supervisor ||
-    (user && (user.isAdmin || user.role === 'admin' || user.role === 'owner' || user.email === 'a@snns.pro'))
-  ) {
-    (req as any).adminUser = supervisor || user;
+  if (supervisor) {
+    (req as any).adminUser = supervisor;
     return next();
   }
   return res.status(403).json({
@@ -1784,26 +1656,10 @@ export function setupCallsAPI(appInstance: express.Express) {
         }
       }
 
-      // Built-in resilient WebRTC room URL on SNNS.SITE
-      const fallbackUrl = `https://snns.daily.co/${sanitizedName}`;
-      const snnsSiteUrl = `https://snns.site/call/${sanitizedName}`;
-
-      const roomObj: CallRoomRecord = {
-        name: sanitizedName,
-        url: fallbackUrl,
-        snnsSiteUrl: snnsSiteUrl,
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(exp * 1000).toISOString(),
-      };
-      activeRoomsDB.push(roomObj);
-
-      return res.status(200).json({
-        success: true,
-        roomName: sanitizedName,
-        callUrl: fallbackUrl,
-        snnsSiteUrl: snnsSiteUrl,
-        provider: 'snns-site-webrtc',
-        note: 'غرفة مكالمات مباشرة نشطة وموجهة عبر نطاق SNNS.SITE',
+      return res.status(503).json({
+        success: false,
+        error: 'DAILY_ROOM_NOT_CREATED',
+        message: 'تعذر تأكيد إنشاء غرفة حقيقية لدى Daily.co. لا يوجد رابط بديل وهمي.'
       });
     } catch (error) {
       console.error('Calls API error:', error);

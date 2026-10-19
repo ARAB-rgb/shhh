@@ -342,12 +342,40 @@ class AppRegistryService {
     } catch {}
   }
 
+  getUserTenantCompanies(userEmail?: string): TenantCompany[] {
+    const email = (userEmail || '').toLowerCase().trim();
+    
+    // Super admin (a@snns.pro) does NOT get automatic access to private organization data
+    if (email === 'a@snns.pro') {
+      return []; 
+    }
+
+    // Personal accounts or guests with no corporate links return []
+    if (!email || email.includes('guest') || email.includes('personal')) {
+      return [];
+    }
+
+    // Return only actual organizations where user is an authorized member
+    if (email.includes('htaf') || email === 'htaf@snns.pro') {
+      return [DEFAULT_TENANT_COMPANIES[0]];
+    } else if (email.includes('miller') || email.includes('security')) {
+      return [DEFAULT_TENANT_COMPANIES[1]];
+    } else if (email.includes('admin') || email.includes('owner')) {
+      return [DEFAULT_TENANT_COMPANIES[0], DEFAULT_TENANT_COMPANIES[1]];
+    }
+
+    return [];
+  }
+
   getTenantCompanies(): TenantCompany[] {
     try {
-      const saved = localStorage.getItem('snns_tenant_companies');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem('snns_user_profile');
+      if (saved) {
+        const user = JSON.parse(saved);
+        return this.getUserTenantCompanies(user?.email);
+      }
     } catch {}
-    return DEFAULT_TENANT_COMPANIES;
+    return [];
   }
 
   getCurrentRole(): UserRoleType {

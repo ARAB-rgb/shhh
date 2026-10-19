@@ -1892,5 +1892,28 @@ export const storage = {
       window.dispatchEvent(new CustomEvent('snns_bg_mode_updated', { detail: mode }));
     } catch {}
   },
+  getCmsSettings: () => {
+    try {
+      const saved = localStorage.getItem('snns_cms_settings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      heroTitle: 'منظومة SNNS 365 والخدمات المعتمدة',
+      heroSubtitle: 'دليل المواقع والخدمات السحابية المعتمدة في المملكة العربية السعودية',
+      searchPlaceholder: 'ابحث في دليل الخدمات المعتمدة، منصة مساند، مدرستي، صحتي، أبشر...',
+      announcementBanner: 'إعلان رسمي: تم إطلاق تحديثات الأمن السيبراني ومنظومة البريد المشفر @snns.pro بنجاح.',
+      showAnnouncement: true,
+      bgOpacity: 75,
+      bgPosition: 'center',
+      mobileFit: 'cover',
+      accentColor: 'emerald',
+    };
+  },
+  saveCmsSettings: (settings: any) => {
+    try {
+      localStorage.setItem('snns_cms_settings', JSON.stringify(settings));
+      window.dispatchEvent(new CustomEvent('snns_cms_settings_updated', { detail: settings }));
+    } catch {}
+  },
 };
 
